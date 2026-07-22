@@ -205,12 +205,19 @@ watch(status, (value) => {
 // is local and is gone after we navigate away. So returning to this page (nav
 // back from another route, browser back) with a stale 'answer'/'error' status
 // would render an empty answer view. Always start clean on (re)mount.
-onMounted(() => {
-  // A deep link like /?q=... runs the search automatically (shareable URL).
+onMounted(async () => {
+  // A deep link like /?q=...&hero=N runs the search automatically and restores
+  // the featured source card (shareable URL).
   const shared = route.query.q
+  const heroParam = route.query.hero
   if (typeof shared === 'string' && shared.trim()) {
     query.value = shared
-    submit()
+    await submit()
+    const h = Number(heroParam)
+    if (Number.isInteger(h) && h > 0 && h < sources.value.length) {
+      heroIndex.value = h
+      router.replace({ query: { q: shared, hero: String(h) } })
+    }
   } else if (status.value !== 'idle') {
     reset()
   }
@@ -243,6 +250,11 @@ function nextSource() {
 function selectSource(index: number) {
   heroIndex.value = index
   active.value = 0
+  // Reflect the featured source in the URL (omit for the top match / index 0).
+  const nextQuery: Record<string, string> = {}
+  if (typeof route.query.q === 'string') nextQuery.q = route.query.q
+  if (index !== 0) nextQuery.hero = String(index)
+  router.replace({ query: nextQuery })
   if (import.meta.client) {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' })
@@ -598,13 +610,22 @@ function hideBrokenImage(event: Event) {
       >
         {{ errorDetail }}
       </p>
-      <button
-        type="button"
-        class="btn-glass mt-6 rounded-lg px-6 py-3.5 text-sm font-medium text-foreground backdrop-blur-[10px]"
-        @click="submit"
-      >
-        {{ states?.retry }}
-      </button>
+      <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+        <button
+          type="button"
+          class="btn-glass rounded-lg px-6 py-3.5 text-sm font-medium text-foreground backdrop-blur-[10px]"
+          @click="submit"
+        >
+          {{ states?.retry }}
+        </button>
+        <button
+          type="button"
+          class="rounded-lg border border-border px-6 py-3.5 text-sm font-medium text-text-secondary transition-colors hover:text-foreground"
+          @click="reset"
+        >
+          {{ answerCopy?.newSearch }}
+        </button>
+      </div>
     </section>
   </div>
 </template>
