@@ -49,13 +49,6 @@ export default defineNuxtConfig({
     '/how-it-works': { prerender: true }
   },
 
-  // Bundle the vector shelf as a Nitro server asset so the serverless function
-  // can read it at runtime (the raw data/ path isn't in the function bundle).
-  // Read it with useStorage('assets:data').getItem('apod-vectors.json').
-  nitro: {
-    serverAssets: [{ baseName: 'data', dir: 'data' }]
-  },
-
   vite: {
     plugins: [tailwindcss()]
   },

@@ -1,31 +1,17 @@
 import { GoogleGenAI } from '@google/genai'
 import type { ApodRecord } from '#shared/apod.ts'
+// Import the vector shelf directly so it's bundled straight into the function.
+// A runtime file path / server-asset lookup isn't reliable across build presets
+// (Netlify); at ~7 MB the inlined JSON stays well within the function limit.
+import shelfData from '../../data/apod-vectors.json'
 
-// Load the shelf once, then reuse it (don't re-read on every call). The file is
-// bundled as a Nitro server asset (see nitro.serverAssets in nuxt.config), so it
-// works in a serverless function where the project's data/ path isn't available.
-let records: ApodRecord[] | null = null
-
-async function loadRecords(): Promise<ApodRecord[]> {
-    if (records) return records
-
-    const raw = await useStorage('assets:data').getItem('apod-vectors.json')
-    if (!raw) throw createError({ statusCode: 500, statusMessage: 'Vector shelf not found' })
-
-    // Server assets come back as a string (or an already-parsed object, depending
-    // on the storage driver) — handle both.
-    const loaded: ApodRecord[] = typeof raw === 'string' ? JSON.parse(raw) : (raw as ApodRecord[])
-    records = loaded
-    return loaded
-}
+const shelf: ApodRecord[] = shelfData as ApodRecord[]
 
 export default defineEventHandler(async (event) => {
     // Read the question from the POST body.
     const body = await readBody(event)
     const question = body?.question
     if (!question) throw createError({ statusCode: 400, statusMessage: 'Missing question' })
-
-    const shelf = await loadRecords()
 
     // Embed the user's question into a vector (same embed() as ingest, now with the query).
     const questionVector = await embed(question)
