@@ -1,0 +1,228 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+  APOD Ask — dark-only, editorial space theme.
+  Tokens mirror the Claude Design "APOD Ask" handoff.
+*/
+
+:root {
+  /* shadcn semantic tokens (dark values — app is dark-only) */
+  --background: #020308;
+  --foreground: #f4f4f5;
+  --card: #0b0c0e;
+  --card-foreground: #f4f4f5;
+  --popover: #0e0e12;
+  --popover-foreground: #f4f4f5;
+  --primary: #f4f4f5;
+  --primary-foreground: #020308;
+  --secondary: #17171a;
+  --secondary-foreground: #f4f4f5;
+  --muted: #17171a;
+  --muted-foreground: #9a9aa0;
+  --accent: #26262b;
+  --accent-foreground: #f4f4f5;
+  --destructive: #ff7a7a;
+  --destructive-foreground: #f4f4f5;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.14);
+  --ring: #38d6ee;
+  --radius: 0.75rem;
+
+  /* Text scale (near-black background) */
+  --text-strong: #fafafa;
+  --text-body: #a6a6ac;
+  --text-secondary: #9a9aa0;
+  --text-muted: #8b8b90;
+  --text-faint: #7d7d84;
+
+  /* Warm-tinted text for the "error" state (matches the warm black hole). */
+  --text-warm: #f4ece6;
+  --text-warm-muted: #a79688;
+
+  /* Footer pipeline greys — deliberately dimmer than the text scale. */
+  --pipeline-idle: #3a3a40;
+  --pipeline-sep: #55565b;
+
+  /* Deep-space near-black used behind the hero image + card placeholders. */
+  --space-deep: #04060b;
+
+  /* Frosted translucent surfaces (footer bar, floating scroll-to-top button). */
+  --surface-footer: rgba(7, 7, 9, 0.74);
+  --surface-float: rgba(10, 12, 18, 0.62);
+
+  /* Taurus easter-egg constellation (decorative). */
+  --taurus-star: #eaf1ff;
+  --taurus-eye: #ffb37a;
+  --taurus-eye-halo: rgba(255, 150, 90, 0.25);
+  --taurus-line: rgba(180, 200, 255, 0.26);
+  --taurus-label: rgba(200, 210, 255, 0.4);
+
+  /* Accent / pipeline colors from the design */
+  --accent-cyan: #38d6ee;
+  --accent-purple: #9b7bff;
+  --accent-green: #5fd39a;
+  --accent-warm: #ff8a5c;
+  --star-link: #cfe0ff;
+
+  /* Fonts (self-hosted by @nuxt/fonts) */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --serif: "Spectral", ui-serif, Georgia, serif;
+  --mono: "Roboto Mono", ui-monospace, monospace;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* custom text + accent tokens usable as utilities */
+  --color-text-strong: var(--text-strong);
+  --color-text-body: var(--text-body);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-faint: var(--text-faint);
+  --color-text-warm: var(--text-warm);
+  --color-text-warm-muted: var(--text-warm-muted);
+  --color-pipeline-idle: var(--pipeline-idle);
+  --color-pipeline-sep: var(--pipeline-sep);
+  --color-space-deep: var(--space-deep);
+  --color-surface-footer: var(--surface-footer);
+  --color-surface-float: var(--surface-float);
+  --color-accent-cyan: var(--accent-cyan);
+  --color-accent-purple: var(--accent-purple);
+  --color-accent-green: var(--accent-green);
+  --color-accent-warm: var(--accent-warm);
+  --color-star-link: var(--star-link);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --font-sans: var(--font-sans);
+  --font-serif: var(--serif);
+  --font-mono: var(--mono);
+}
+
+/* Keyframes from the design */
+@keyframes twinkle { 0%, 100% { opacity: .3; } 50% { opacity: .9; } }
+@keyframes twinkle2 { 0%, 100% { opacity: .65; } 50% { opacity: .2; } }
+@keyframes twinkle3 { 0%, 100% { opacity: .18; } 50% { opacity: .55; } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes drift { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+@keyframes comet1 {
+  0% { opacity: 0; transform: translate(-60px, -30px) rotate(32deg); }
+  2% { opacity: 1; }
+  8% { opacity: 0; transform: translate(620px, 360px) rotate(32deg); }
+  100% { opacity: 0; transform: translate(620px, 360px) rotate(32deg); }
+}
+@keyframes comet2 {
+  0% { opacity: 0; transform: translate(820px, -40px) rotate(150deg); }
+  3% { opacity: 1; }
+  10% { opacity: 0; transform: translate(160px, 340px) rotate(150deg); }
+  100% { opacity: 0; transform: translate(160px, 340px) rotate(150deg); }
+}
+/* Shared with the sibling site: orbit spinner and pulsing core. */
+@keyframes orbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes corepulse { 0%, 100% { transform: scale(1); opacity: .9; } 50% { transform: scale(1.35); opacity: 1; } }
+/* Disclosure animation for the shadcn/reka Collapsible (code panels). */
+@keyframes collapsible-down {
+  from { height: 0; }
+  to { height: var(--reka-collapsible-content-height); }
+}
+@keyframes collapsible-up {
+  from { height: var(--reka-collapsible-content-height); }
+  to { height: 0; }
+}
+
+/* Reusable utilities so templates don't repeat arbitrary values. */
+@utility animate-fade-up { animation: fadeUp 0.5s ease; }
+@utility bg-gradient-accent { background-image: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple)); }
+/* Frosted "glass" surface + hover, shared by the primary action buttons. */
+@utility btn-glass {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.06);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+    background-color: rgba(255, 255, 255, 0.14);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-black text-foreground antialiased;
+    font-family: var(--font-sans);
+  }
+  a {
+    color: var(--star-link);
+    text-decoration: none;
+  }
+  a:hover {
+    color: #fff;
+  }
+  ::selection {
+    background: rgba(56, 214, 238, 0.3);
+  }
+  /* Respect reduced-motion for all the decorative animations. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+    }
+  }
+}
+
+/* Route + layout transitions (see app.pageTransition in nuxt.config). A soft
+   cross-fade with a small vertical shift — mode: out-in, so the old page leaves
+   before the new one enters. */
+.page-enter-active,
+.page-leave-active,
+.layout-enter-active,
+.layout-leave-active {
+  transition: opacity 0.28s ease, transform 0.28s ease;
+}
+.page-enter-from,
+.layout-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.page-leave-to,
+.layout-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-enter-active,
+  .page-leave-active,
+  .layout-enter-active,
+  .layout-leave-active {
+    transition: none;
+  }
+}

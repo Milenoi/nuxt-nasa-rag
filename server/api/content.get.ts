@@ -1,0 +1,145 @@
+// Central source for all UI copy, served as a static API — the frontend fetches
+// it with useFetch('/api/content'), the same "data comes from a server route"
+// pattern the sibling site uses. Keeping every string here (never hard-coded in
+// components) is also the natural place to add multilingual variants later.
+export default defineEventHandler(() => {
+  return {
+    siteName: 'APOD Ask',
+    // Site chrome: brand + nav links (labels here, routes are structural). The
+    // GitHub link and sibling site mirror the caching demo's cross-linking.
+    header: {
+      brand: 'APOD Ask',
+      github: 'GitHub ↗',
+      githubUrl: 'https://github.com/Milenoi/nuxt-nasa-rag'
+    },
+    nav: [
+      { label: 'Ask', link: '/' },
+      { label: 'How it works', link: '/how-it-works' },
+      { label: 'About', link: '/about' }
+    ],
+    footer: {
+      // The RAG pipeline, shown as a live status chain (mirrors the sibling
+      // site's cache chain). Each stage lights up as a question is answered.
+      stages: ['Query', 'Retrieve', 'Rank', 'Answer'],
+      idleLabel: 'idle',
+      meta: 'embeddings · retrieval · NASA APOD'
+    },
+    hero: {
+      eyebrow: "Natural-language search across NASA's APOD.",
+      title: 'Ask the Stars',
+      subtitle:
+        'Ask anything about astronomy — answers come from real NASA Astronomy Picture of the Day descriptions, with the source images.'
+    },
+    ask: {
+      placeholder: "e.g. What is the Cat's Eye Nebula?",
+      inputLabel: 'Your astronomy question',
+      submit: 'Ask',
+      emptyHint: 'Come on — space may be empty, but you still have to ask something.',
+      examples: [
+        'What is a planetary nebula?',
+        'A colorful nebula shaped like an animal',
+        'How does a supernova happen?'
+      ],
+      loading: 'Searching the cosmos…'
+    },
+    answer: {
+      heading: 'Answer',
+      sourcesHeading: 'Sources',
+      newSearch: 'New search',
+      // "{n} APOD pictures" — the count is prepended in the component.
+      sourcesCount: 'APOD pictures',
+      topMatch: 'Top match',
+      match: 'Match',
+      askedLabel: 'You asked',
+      sourceLabel: 'Source',
+      viewOriginal: 'View original',
+      prevSource: 'Previous source',
+      nextSource: 'Next source',
+      // {title} is replaced with the source title in the component.
+      showInHero: 'Show {title} in the hero'
+    },
+    // Screen-reader announcements for the Ask state transitions (visually hidden).
+    a11y: {
+      answerReady: 'Answer ready.',
+      noResults: 'No matching results found.',
+      requestError: 'The request failed.'
+    },
+    states: {
+      empty: "I couldn't find anything about that in the APOD texts.",
+      emptyHeading: 'Nothing crossed the event horizon.',
+      // Appended to `empty` to nudge toward a space-related topic.
+      emptyHintSuffix: 'Try an astronomy topic — stars, galaxies, nebulae, planets, comets.',
+      // Shown when the best match is so weak the query clearly isn't about space.
+      nonsense: "Come on — don't waste Melanie's tokens on questions that have nothing to do with space.",
+      error: 'Something went wrong reaching the stars. Please try again.',
+      errorHeading: 'The signal fell into a black hole.',
+      retry: 'Try again',
+      retryOther: 'Ask something else'
+    },
+    howItWorks: {
+      tagline: 'Retrieval-Augmented Generation, in plain sight',
+      heading: 'How it works',
+      lead: 'Every answer is built in four small steps. There is no black-box vector database — the retrieval is hand-written and fully visible, so you can see exactly how a question turns into a grounded answer.',
+      steps: [
+        {
+          role: 'Query',
+          color: 'cyan',
+          name: 'Embed the question',
+          desc: 'Your question is turned into a list of 384 numbers — a vector — by a small Transformers.js model running locally. The same model already turned every APOD description into a vector. Meaning becomes math, with no API call and no cost.'
+        },
+        {
+          role: 'Retrieve',
+          color: 'cyan',
+          name: 'Find the closest texts',
+          desc: 'That question-vector is compared against every stored APOD vector using cosine similarity — roughly twenty lines of hand-written math over a JSON file. The closer two vectors point, the closer their meaning.'
+        },
+        {
+          role: 'Rank',
+          color: 'purple',
+          name: 'Keep the best matches',
+          desc: 'The results are sorted by similarity and the top five are kept as sources. If even the best match is too weak (below a relevance threshold), the app says it found nothing instead of inventing an answer.'
+        },
+        {
+          role: 'Answer',
+          color: 'green',
+          name: 'Generate a grounded answer',
+          desc: 'The question and the retrieved texts go to Google Gemini with a single rule: answer only from these descriptions. That grounding is what keeps the answer honest — and it is why we can show the exact NASA pictures it drew from.'
+        }
+      ],
+      footnote: 'Built with Nuxt 4, Transformers.js and Google Gemini — a sibling to the',
+      showCode: 'Show code',
+      hideCode: 'Hide code'
+    },
+    about: {
+      tagline: 'A learning project',
+      heading: 'Understanding RAG by building it by hand',
+      lead1: "I'm a frontend developer, curious about how AI actually works under the hood. Instead of reaching for a framework that hides everything, I wanted to build Retrieval-Augmented Generation from the ground up — so I could actually explain what embedding, retrieval and grounded generation each do, in my own words.",
+      lead2: 'So every moving part here is deliberately visible: the embeddings run locally, the similarity search is a few lines of hand-written math over a JSON file, and the language model is told to answer only from the retrieved NASA texts.',
+      techStackLabel: 'Stack',
+      techStack: [
+        { label: 'Framework', value: 'Nuxt 4 + Vue, Nitro server routes' },
+        { label: 'Embeddings', value: 'Transformers.js — paraphrase-multilingual-MiniLM-L12-v2 (384-dim, local, free)' },
+        { label: 'Vector store', value: 'Plain JSON file + hand-written cosine similarity' },
+        { label: 'Language model', value: 'Google Gemini — gemini-flash-latest (free tier)' },
+        { label: 'Data', value: 'NASA Astronomy Picture of the Day API' },
+        { label: 'Hosting', value: 'Netlify' }
+      ],
+      cta: 'View the source on GitHub ↗',
+      creditText: 'A sibling to the',
+      builtBy:
+        'Built by Melanie Stief — forever half-hoping for a NASA badge, or at least a window seat past the atmosphere. Until the universe sends the invite, building small things about the cosmos will have to do.',
+      creditSep: '·',
+      viridisUrl: 'https://viridis.de',
+      viridisLabel: 'viridis.de'
+    },
+    sibling: {
+      label: 'APOD caching demo',
+      url: 'https://nuxt-cache-project.netlify.app/'
+    },
+    // Copy for the draggable Taurus easter egg (decorative, hidden from AT).
+    taurus: {
+      label: 'Taurus',
+      labelMoved: 'Not Taurus anymore'
+    }
+  }
+})
