@@ -29,7 +29,10 @@ export default defineEventHandler(async (event) => {
     ranked.sort((a, b) => b.score - a.score)
     const top = ranked.slice(0, 5)
 
-    const RELEVANCE_THRESHOLD = 0.3
+    // Tuned for gemini-embedding-001: real astronomy questions score ~0.63+,
+    // while unrelated/nonsense queries top out around ~0.48 — so 0.55 sits in
+    // the gap and keeps gibberish from being treated as a real match.
+    const RELEVANCE_THRESHOLD = 0.55
 
     // If even the best match is weak, don't pretend we found something relevant.
     const best = top[0]

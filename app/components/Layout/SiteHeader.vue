@@ -59,6 +59,7 @@ watch(
           :to="item.link"
           class="transition-colors hover:text-white"
           :class="isActive(item.link) ? 'text-white' : 'text-white/60'"
+          @click="item.link === '/' && resetToAsk()"
         >
           {{ item.label }}
         </NuxtLink>
@@ -115,6 +116,7 @@ watch(
           :key="item.link"
           :to="item.link"
           class="border-b border-white/[0.06] px-1 py-[14px] text-left text-base text-text-strong"
+          @click="item.link === '/' && resetToAsk()"
         >
           {{ item.label }}
         </NuxtLink>

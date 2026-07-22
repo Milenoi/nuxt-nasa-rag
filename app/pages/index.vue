@@ -53,7 +53,7 @@ const askHint = ref('')
 // nothing to do with space, which earns a playful roast instead of the neutral
 // "nothing found" copy.
 const emptyScore = ref(1)
-const NONSENSE_CUTOFF = 0.15
+const NONSENSE_CUTOFF = 0.5
 const isNonsense = computed(() => emptyScore.value < NONSENSE_CUTOFF)
 const emptyMessage = computed(() =>
   isNonsense.value
@@ -191,6 +191,14 @@ function reset() {
 // mirror that here by clearing the page's own state when it happens.
 watch(status, (value) => {
   if (value === 'idle') clearLocal()
+})
+
+// `status` is shared state that outlives this page, but the answer/sources data
+// is local and is gone after we navigate away. So returning to this page (nav
+// back from another route, browser back) with a stale 'answer'/'error' status
+// would render an empty answer view. Always start clean on (re)mount.
+onMounted(() => {
+  if (status.value !== 'idle') reset()
 })
 
 // Typing dismisses the empty-field nudge.
