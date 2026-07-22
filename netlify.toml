@@ -4,3 +4,10 @@
   remote_images = [
     'https://apod.nasa.gov/.*'
   ]
+
+[build.environment]
+  # These env vars are consumed only by the server-side Nitro function (SSR) and
+  # are never shipped to the browser; NUXT_NASA_APOD_API_URL is a public, non-secret
+  # NASA endpoint. Netlify's secret scanner flags their presence in the server
+  # bundle / docs, so exclude them from scanning.
+  SECRETS_SCAN_OMIT_KEYS = "NASA_API_KEY,GEMINI_API_KEY,NUXT_NASA_APOD_API_URL"
