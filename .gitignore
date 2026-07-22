@@ -22,6 +22,10 @@ logs
 .playwright-mcp
 rag-desktop-idle.png
 
+# Internal planning notes — not part of the public repo
+LEARNING-PLAN.md
+CONTINUE.md
+
 # Local env files
 .env
 .env.*

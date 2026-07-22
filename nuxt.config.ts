@@ -1,5 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import tailwindcss from '@tailwindcss/vite'
+import imageConfig from './app/utils/getImageConfig'
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
@@ -26,13 +27,9 @@ export default defineNuxtConfig({
     componentDir: '@/components/ui'
   },
 
-  // @nuxt/image: optimize the remote APOD images — modern formats + sensible
-  // quality so the bandwidth-heavy hero and cards ship as AVIF/WebP.
-  image: {
-    domains: ['apod.nasa.gov'],
-    format: ['avif', 'webp'],
-    quality: 72
-  },
+  // @nuxt/image: dev uses IPX, production uses the Netlify Image CDN (see
+  // getImageConfig) — keeps sharp/IPX out of the serverless function.
+  image: imageConfig,
 
   // Fonts are referenced via CSS custom properties (var(--font-sans) …), which
   // @nuxt/fonts cannot always detect through the indirection — list them
@@ -50,6 +47,13 @@ export default defineNuxtConfig({
   routeRules: {
     '/about': { prerender: true },
     '/how-it-works': { prerender: true }
+  },
+
+  // Bundle the vector shelf as a Nitro server asset so the serverless function
+  // can read it at runtime (the raw data/ path isn't in the function bundle).
+  // Read it with useStorage('assets:data').getItem('apod-vectors.json').
+  nitro: {
+    serverAssets: [{ baseName: 'data', dir: 'data' }]
   },
 
   vite: {

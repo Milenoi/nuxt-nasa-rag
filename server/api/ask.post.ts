@@ -1,15 +1,20 @@
 import { GoogleGenAI } from '@google/genai'
-import { readFileSync } from 'node:fs'
 import type { ApodRecord } from '#shared/apod.ts'
 
-// Load the shelf once, then reuse it (like the model — don't re-read every call).
+// Load the shelf once, then reuse it (don't re-read on every call). The file is
+// bundled as a Nitro server asset (see nitro.serverAssets in nuxt.config), so it
+// works in a serverless function where the project's data/ path isn't available.
 let records: ApodRecord[] | null = null
 
-function loadRecords(): ApodRecord[] {
+async function loadRecords(): Promise<ApodRecord[]> {
     if (records) return records
 
-    // First call: read + parse the file, cache it, and return the loaded list.
-    const loaded: ApodRecord[] = JSON.parse(readFileSync('data/apod-vectors.json', 'utf-8'))
+    const raw = await useStorage('assets:data').getItem('apod-vectors.json')
+    if (!raw) throw createError({ statusCode: 500, statusMessage: 'Vector shelf not found' })
+
+    // Server assets come back as a string (or an already-parsed object, depending
+    // on the storage driver) — handle both.
+    const loaded: ApodRecord[] = typeof raw === 'string' ? JSON.parse(raw) : (raw as ApodRecord[])
     records = loaded
     return loaded
 }
@@ -20,7 +25,7 @@ export default defineEventHandler(async (event) => {
     const question = body?.question
     if (!question) throw createError({ statusCode: 400, statusMessage: 'Missing question' })
 
-    const shelf = loadRecords()
+    const shelf = await loadRecords()
 
     // Embed the user's question into a vector (same embed() as ingest, now with the query).
     const questionVector = await embed(question)

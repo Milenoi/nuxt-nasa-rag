@@ -85,7 +85,7 @@ export default defineEventHandler(() => {
           role: 'Query',
           color: 'cyan',
           name: 'Embed the question',
-          desc: 'Your question is turned into a list of 384 numbers — a vector — by a small Transformers.js model running locally. The same model already turned every APOD description into a vector. Meaning becomes math, with no API call and no cost.'
+          desc: "Your question is turned into a list of 768 numbers — a vector — by Google's multilingual Gemini embedding model. The same model already turned every APOD description into a vector, so a German question can still find an English text. Meaning becomes math the computer can compare."
         },
         {
           role: 'Retrieve',
@@ -106,7 +106,7 @@ export default defineEventHandler(() => {
           desc: 'The question and the retrieved texts go to Google Gemini with a single rule: answer only from these descriptions. That grounding is what keeps the answer honest — and it is why we can show the exact NASA pictures it drew from.'
         }
       ],
-      footnote: 'Built with Nuxt 4, Transformers.js and Google Gemini — a sibling to the',
+      footnote: 'Built with Nuxt 4 and Google Gemini — a sibling to the',
       showCode: 'Show code',
       hideCode: 'Hide code'
     },
@@ -114,11 +114,11 @@ export default defineEventHandler(() => {
       tagline: 'A learning project',
       heading: 'Understanding RAG by building it by hand',
       lead1: "I'm a frontend developer, curious about how AI actually works under the hood. Instead of reaching for a framework that hides everything, I wanted to build Retrieval-Augmented Generation from the ground up — so I could actually explain what embedding, retrieval and grounded generation each do, in my own words.",
-      lead2: 'So every moving part here is deliberately visible: the embeddings run locally, the similarity search is a few lines of hand-written math over a JSON file, and the language model is told to answer only from the retrieved NASA texts.',
+      lead2: 'So every moving part here is deliberately visible: the embedding step calls a hosted model, the similarity search is a few lines of hand-written math over a JSON file — no black-box vector database — and the language model is told to answer only from the retrieved NASA texts.',
       techStackLabel: 'Stack',
       techStack: [
         { label: 'Framework', value: 'Nuxt 4 + Vue, Nitro server routes' },
-        { label: 'Embeddings', value: 'Transformers.js — paraphrase-multilingual-MiniLM-L12-v2 (384-dim, local, free)' },
+        { label: 'Embeddings', value: 'Google Gemini — gemini-embedding-001 (multilingual, 768-dim)' },
         { label: 'Vector store', value: 'Plain JSON file + hand-written cosine similarity' },
         { label: 'Language model', value: 'Google Gemini — gemini-flash-latest (free tier)' },
         { label: 'Data', value: 'NASA Astronomy Picture of the Day API' },

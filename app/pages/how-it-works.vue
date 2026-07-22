@@ -25,13 +25,13 @@ const palette: Record<string, { border: string; text: string }> = {
 const snippets: { file: string; code: string }[] = [
   {
     file: 'server/utils/embed.ts',
-    code: `const extractor = await pipeline(
-  'feature-extraction',
-  'Xenova/paraphrase-multilingual-MiniLM-L12-v2'
-)
-// { pooling: 'mean', normalize: true } → one unit-length sentence vector
-const tensor = await extractor(text, { pooling: 'mean', normalize: true })
-return tensor.tolist()[0] // a list of 384 numbers`
+    code: `const response = await ai.models.embedContent({
+  model: 'gemini-embedding-001',      // multilingual, 100+ languages
+  contents: text,
+  config: { outputDimensionality: 768 }
+})
+// normalize to unit length → cosine is a plain dot product
+return normalize(response.embeddings[0].values)`
   },
   {
     file: 'server/utils/search.ts',

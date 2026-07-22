@@ -14,6 +14,24 @@ const toIso = (d: Date) => d.toISOString().slice(0, 10)
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
+// Embedding now hits the Gemini API, so be resilient to transient rate limits
+// (429 / quota) with a short backoff before giving up.
+async function embedWithRetry(text: string, attempt = 1): Promise<number[]> {
+    try {
+        return await embed(text)
+    } catch (err) {
+        const message = String((err as Error)?.message ?? err)
+        const rateLimited = message.includes('429') || /quota|rate|exhausted/i.test(message)
+        if (rateLimited && attempt < 5) {
+            const wait = attempt * 4000
+            console.log(`  embed rate-limited — retry ${attempt} in ${wait}ms`)
+            await sleep(wait)
+            return embedWithRetry(text, attempt + 1)
+        }
+        throw err
+    }
+}
+
 // Fetch one date-range window, retrying a few times on transient errors.
 async function fetchRange(startIso: string, endIso: string, attempt = 1) {
     const url = `${NASA_APOD_API_URL}?api_key=${NASA_API_KEY}&start_date=${startIso}&end_date=${endIso}`
@@ -65,7 +83,8 @@ async function main() {
     const records: ApodRecord[] = []
     for (let i = 0; i < images.length; i++) {
         const entry = images[i]
-        const vector = await embed(entry.explanation)
+        const vector = await embedWithRetry(entry.explanation)
+        await sleep(120) // gentle pacing so we stay under the per-minute limit
         records.push({
             date: entry.date,
             title: entry.title,
