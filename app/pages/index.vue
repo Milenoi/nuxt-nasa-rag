@@ -24,6 +24,8 @@ type AskResponse = {
 
 const { data: content } = await useFetch('/api/content', { key: 'content' })
 const { status, timing } = useAskStatus()
+const route = useRoute()
+const router = useRouter()
 
 useSeoMeta({
   title: 'APOD Ask — ask the stars',
@@ -114,6 +116,8 @@ async function submit() {
     return
   }
   askHint.value = ''
+  // Reflect the query in the URL so the result is shareable / bookmarkable.
+  if (route.query.q !== q) router.replace({ query: { q } })
   const id = ++requestId
   status.value = 'loading'
   timing.value = null
@@ -190,7 +194,11 @@ function reset() {
 // The logo (in the header) resets the shared status to 'idle' from anywhere —
 // mirror that here by clearing the page's own state when it happens.
 watch(status, (value) => {
-  if (value === 'idle') clearLocal()
+  if (value === 'idle') {
+    clearLocal()
+    // Drop the ?q= param so a reset also gives a clean, shareable idle URL.
+    if (route.query.q) router.replace({ query: {} })
+  }
 })
 
 // `status` is shared state that outlives this page, but the answer/sources data
@@ -198,7 +206,14 @@ watch(status, (value) => {
 // back from another route, browser back) with a stale 'answer'/'error' status
 // would render an empty answer view. Always start clean on (re)mount.
 onMounted(() => {
-  if (status.value !== 'idle') reset()
+  // A deep link like /?q=... runs the search automatically (shareable URL).
+  const shared = route.query.q
+  if (typeof shared === 'string' && shared.trim()) {
+    query.value = shared
+    submit()
+  } else if (status.value !== 'idle') {
+    reset()
+  }
 })
 
 // Typing dismisses the empty-field nudge.
