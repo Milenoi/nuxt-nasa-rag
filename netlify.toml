@@ -1,8 +1,10 @@
 # Whitelist remote image sources for Netlify's Image CDN (used by @nuxt/image
-# on Netlify). Only APOD images are rendered — videos are skipped at ingest.
+# on Netlify). APOD stills + video thumbnails, plus YouTube video thumbnails.
 [images]
   remote_images = [
-    'https://apod.nasa.gov/.*'
+    'https://apod.nasa.gov/.*',
+    'https://img.youtube.com/.*',
+    'https://i.ytimg.com/.*'
   ]
 
 [build.environment]

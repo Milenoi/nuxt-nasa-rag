@@ -345,7 +345,10 @@ function cardGradient(i: number) {
 }
 
 // Hide a broken image so the gradient placeholder underneath shows instead.
-function hideBrokenImage(event: Event) {
+// NuxtPicture types its error payload as `string | Event`; only the Event form
+// carries a DOM target to hide.
+function hideBrokenImage(event: Event | string) {
+  if (typeof event === 'string') return
   ;(event.target as HTMLElement).style.display = 'none'
 }
 
@@ -515,15 +518,18 @@ const cardImage = (src: Source) => (isVideo(src) ? src.thumbnailUrl : src.imageU
             allow="autoplay; encrypted-media; picture-in-picture"
             class="absolute inset-0 h-full w-full"
           />
-          <!-- Still image. -->
-          <img
+          <!-- Still image, optimized via @nuxt/image (AVIF/WebP + Netlify CDN).
+               <picture> gets the absolute fill; the inner <img> gets the sizing. -->
+          <NuxtPicture
             v-else-if="heroSource?.imageUrl"
             :key="heroIndex"
             :src="heroSource.imageUrl"
             :alt="heroSource.title"
-            class="absolute inset-0 h-full w-full object-cover"
+            sizes="100vw"
+            class="absolute inset-0"
+            :img-attrs="{ class: 'h-full w-full object-cover' }"
             @error="hideBrokenImage"
-          >
+          />
         </Transition>
         <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(2,3,8,0.35)_0%,transparent_26%,rgba(2,3,8,0.55)_66%,#020308_100%)]" />
 
@@ -718,14 +724,15 @@ const cardImage = (src: Source) => (isVideo(src) ? src.thumbnailUrl : src.imageU
                       class="relative h-40 overflow-hidden"
                       :style="{ background: cardGradient(item.index) }"
                     >
-                      <img
+                      <NuxtPicture
                         v-if="cardImage(item.src)"
-                        :src="cardImage(item.src)"
+                        :src="cardImage(item.src)!"
                         :alt="item.src.title"
-                        loading="lazy"
-                        class="absolute inset-0 h-full w-full object-cover"
+                        sizes="256px"
+                        class="absolute inset-0"
+                        :img-attrs="{ class: 'h-full w-full object-cover', loading: 'lazy' }"
                         @error="hideBrokenImage"
-                      >
+                      />
                       <!-- Play badge marks a video source (mp4s often have no thumb). -->
                       <div
                         v-if="isVideo(item.src)"

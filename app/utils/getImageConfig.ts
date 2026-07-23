@@ -2,7 +2,9 @@ const shared = {
   quality: 72,
   format: ['avif', 'webp'],
   // Allowlist for transforming remote images (also mirrored in netlify.toml).
-  domains: ['apod.nasa.gov'],
+  // apod.nasa.gov: still images + video thumbnails; img.youtube.com/i.ytimg.com:
+  // YouTube video thumbnails.
+  domains: ['apod.nasa.gov', 'img.youtube.com', 'i.ytimg.com'],
   // Page is capped at 1920, so no image ever needs to be wider than that.
   screens: {
     xs: 600,
