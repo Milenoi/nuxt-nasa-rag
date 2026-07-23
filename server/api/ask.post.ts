@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai'
 import { Index } from '@upstash/vector'
+import type { ApodMetadata } from '../utils/apodVector'
 
 // import type { ApodRecord } from '#shared/apod.ts'
 // Import the vector shelf directly so it's bundled straight into the function.
@@ -50,7 +51,9 @@ export default defineEventHandler(async (event) => {
         includeMetadata: true
     })
     const top = matches.map((match) => {
-        const m = match.metadata as Record<string, string>
+        // Upstash types metadata loosely; we wrote it via ApodMetadata, so read
+        // it back as that. Concrete fields, unlike the old Record<string,string>.
+        const m = match.metadata as unknown as ApodMetadata
         return {
             date: m.date,
             title: m.title,
