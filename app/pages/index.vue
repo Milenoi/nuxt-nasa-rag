@@ -9,6 +9,7 @@
 import { marked } from 'marked'
 import Autoplay from 'embla-carousel-autoplay'
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel'
+import { Slider } from '@/components/ui/slider'
 
 type Source = {
   date: string
@@ -22,6 +23,7 @@ type AskResponse = {
   answer: string
   sources: Source[]
   topScore?: number
+  threshold?: number
 }
 
 const { data: content } = await useFetch('/api/content', { key: 'content' })
@@ -30,7 +32,7 @@ const route = useRoute()
 const router = useRouter()
 
 useSeoMeta({
-  title: 'APOD Ask — ask the stars',
+  title: 'APOD Ask: ask the stars',
   description:
     'Ask an astronomy question and get an answer grounded in real NASA Astronomy Picture of the Day descriptions, with the source images.'
 })
@@ -50,22 +52,23 @@ const sources = ref<Source[]>([])
 // Embla drives the source carousel (scroll / drag / autoplay). We hold its API so
 // we can re-measure and jump back to the start after a hero swap changes the row.
 const carouselApi = ref<CarouselApi>()
-// Whether the arrows can still page in each direction — kept in sync with Embla's
+// Whether the arrows can still page in each direction, kept in sync with Embla's
 // own scroll state so the buttons disable at the ends, like the old slider did.
 const canScrollPrev = ref(false)
 const canScrollNext = ref(false)
-// Autoplay pages the row gently. stopOnMouseEnter pauses on hover; stopOnInteraction
-// halts it for good once someone drags or clicks a card, so it never fights a reader.
-// playOnInit:false lets us skip it entirely under prefers-reduced-motion.
+// Autoplay pages the row gently. stopOnMouseEnter pauses it while the pointer is over
+// the row (or dragging), but stopOnInteraction:false lets it resume once the pointer
+// leaves, so it never dies for good. playOnInit:false lets us skip it entirely under
+// prefers-reduced-motion.
 const autoplayPlugins = [
-  Autoplay({ delay: 4500, stopOnMouseEnter: true, stopOnInteraction: true, playOnInit: false })
+  Autoplay({ delay: 4500, stopOnMouseEnter: true, stopOnInteraction: false, playOnInit: false })
 ]
 // A short, human-readable reason shown on the error screen so it's clear WHY
 // the request failed (e.g. the Gemini quota) versus genuinely finding nothing.
 const errorDetail = ref('')
 // Gentle nudge when someone hits Ask with an empty field.
 const askHint = ref('')
-// Best similarity on an empty result — below the cutoff the query clearly has
+// Best similarity on an empty result, below the cutoff the query clearly has
 // nothing to do with space, which earns a playful roast instead of the neutral
 // "nothing found" copy.
 const emptyScore = ref(1)
@@ -80,6 +83,22 @@ const emptyMessage = computed(() =>
 // clicking another source card swaps the hero to that picture.
 const heroIndex = ref(0)
 
+// Relevance tolerance: the cutoff a source's score must clear to count as relevant.
+// The slider exposes it; DEFAULT_THRESHOLD mirrors the backend default. `threshold`
+// drives the live dimming (client-only, free). `lastAskedThreshold` is the value the
+// current answer was actually fetched with, so we know when re-asking would change
+// anything.
+const DEFAULT_THRESHOLD = 0.55
+const threshold = ref(DEFAULT_THRESHOLD)
+const lastAskedThreshold = ref(DEFAULT_THRESHOLD)
+// reka-ui's Slider supports multiple thumbs, so its v-model is an array.
+const thresholdModel = computed({
+  get: () => [threshold.value],
+  set: (value: number[]) => { threshold.value = value[0] ?? DEFAULT_THRESHOLD }
+})
+// Only worth re-asking once the slider moved off the value we last searched with.
+const thresholdChanged = computed(() => Math.abs(threshold.value - lastAskedThreshold.value) > 0.001)
+
 // Announced to assistive tech + used to move focus when a state change happens,
 // so the result isn't silent once the loader is removed from the DOM.
 const liveMessage = ref('')
@@ -89,8 +108,8 @@ const errorHeading = ref<HTMLElement | null>(null)
 
 // The Gemini answer is Markdown. `marked` does not strip raw HTML, so even though
 // the text comes from our own grounded route we sanitize the rendered HTML before
-// injecting it. DOMPurify loads on the client only — the 'answer' state is always
-// reached via a client-side request — so it never enters the server bundle.
+// injecting it. DOMPurify loads on the client only, the 'answer' state is always
+// reached via a client-side request, so it never enters the server bundle.
 watch(answer, async (md) => {
   if (!md) {
     answerHtml.value = ''
@@ -120,8 +139,17 @@ function announce(message: string, target: { value: HTMLElement | null }) {
 }
 
 // A monotonic request id: if two requests are ever in flight, only the newest is
-// allowed to write the result — a slower earlier response is discarded.
+// allowed to write the result, a slower earlier response is discarded.
 let requestId = 0
+
+// Build the shareable URL query from the current state, omitting defaults so the
+// URL stays clean (no ?hero=0, no ?t=0.55).
+function shareQuery(q: string, hero: number, tol: number): Record<string, string> {
+  const query: Record<string, string> = { q }
+  if (hero > 0) query.hero = String(hero)
+  if (Math.abs(tol - DEFAULT_THRESHOLD) > 0.001) query.t = tol.toFixed(2)
+  return query
+}
 
 async function submit() {
   const q = query.value.trim()
@@ -130,8 +158,9 @@ async function submit() {
     return
   }
   askHint.value = ''
-  // Reflect the query in the URL so the result is shareable / bookmarkable.
-  if (route.query.q !== q) router.replace({ query: { q } })
+  // Reflect the query + tolerance in the URL so the result is shareable.
+  // (heroIndex resets to 0 just below, so a fresh ask carries no hero param.)
+  router.replace({ query: shareQuery(q, 0, threshold.value) })
   const id = ++requestId
   status.value = 'loading'
   timing.value = null
@@ -140,11 +169,14 @@ async function submit() {
   try {
     const res = await $fetch<AskResponse>('/api/ask', {
       method: 'POST',
-      body: { question: q }
+      body: { question: q, threshold: threshold.value }
     })
     if (id !== requestId) return
     timing.value = `${((performance.now() - started) / 1000).toFixed(2)} s`
     queryEcho.value = res.question
+    // Remember what tolerance this answer was fetched with, so the "ask again"
+    // button only appears once the slider actually moves away from it.
+    lastAskedThreshold.value = threshold.value
     if (!res.sources?.length) {
       answer.value = ''
       sources.value = []
@@ -167,13 +199,13 @@ async function submit() {
 }
 
 // Turn a thrown fetch error into a short, readable reason. The Gemini quota
-// (HTTP 429) is the common one on the free tier, so it's called out explicitly —
+// (HTTP 429) is the common one on the free tier, so it's called out explicitly,
 // preferring the structured status code, with a string check as a fallback.
 function describeError(err: unknown): string {
   const e = err as { statusCode?: number; statusMessage?: string; data?: unknown; message?: string }
   const raw = `${JSON.stringify(e?.data ?? '')} ${e?.message ?? ''}`
   if (e?.statusCode === 429 || raw.includes('429') || /quota|rate.?limit|exceeded/i.test(raw)) {
-    return 'Gemini rate limit reached (HTTP 429). The free-tier quota is used up — it resets automatically (per-minute limits within a minute, the daily quota at midnight Pacific time).'
+    return 'Gemini rate limit reached (HTTP 429). The free-tier quota is used up, it resets automatically (per-minute limits within a minute, the daily quota at midnight Pacific time).'
   }
   if (e?.statusCode) {
     return `The answer service returned an error (HTTP ${e.statusCode}${e.statusMessage ? ` ${e.statusMessage}` : ''}).`
@@ -203,7 +235,7 @@ function reset() {
   status.value = 'idle'
 }
 
-// The logo (in the header) resets the shared status to 'idle' from anywhere —
+// The logo (in the header) resets the shared status to 'idle' from anywhere,
 // mirror that here by clearing the page's own state when it happens.
 watch(status, (value) => {
   if (value === 'idle') {
@@ -222,13 +254,19 @@ onMounted(async () => {
   // the featured source card (shareable URL).
   const shared = route.query.q
   const heroParam = route.query.hero
+  // Restore a shared tolerance BEFORE searching, so the auto-run honours it.
+  const tParam = route.query.t
+  if (typeof tParam === 'string') {
+    const t = Number(tParam)
+    if (!Number.isNaN(t)) threshold.value = Math.min(1, Math.max(0, t))
+  }
   if (typeof shared === 'string' && shared.trim()) {
     query.value = shared
     await submit()
     const h = Number(heroParam)
     if (Number.isInteger(h) && h > 0 && h < sources.value.length) {
       heroIndex.value = h
-      router.replace({ query: { q: shared, hero: String(h) } })
+      router.replace({ query: shareQuery(shared, h, threshold.value) })
     }
   } else if (status.value !== 'idle') {
     reset()
@@ -249,7 +287,7 @@ const sliderSources = computed(() =>
 )
 
 // Grab Embla's API on mount, track the scroll state for the arrows, and start
-// autoplay — unless the visitor asked for less motion, in which case drag and the
+// autoplay, unless the visitor asked for less motion, in which case drag and the
 // arrows still work, it just doesn't page itself.
 function onCarouselInit(api: CarouselApi) {
   carouselApi.value = api
@@ -260,7 +298,7 @@ function onCarouselInit(api: CarouselApi) {
   api?.on('select', sync)
   api?.on('reInit', sync)
   sync()
-  // Start autoplay via the API's plugin handle — but on the NEXT frame. Calling
+  // Start autoplay via the API's plugin handle, but on the NEXT frame. Calling
   // play() synchronously inside init-api runs before Autoplay's own init settles
   // (playOnInit:false), so it no-ops; deferring one frame makes it stick.
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -280,10 +318,9 @@ watch(sliderSources, async () => {
 function selectSource(index: number) {
   heroIndex.value = index
   // Reflect the featured source in the URL (omit for the top match / index 0).
-  const nextQuery: Record<string, string> = {}
-  if (typeof route.query.q === 'string') nextQuery.q = route.query.q
-  if (index !== 0) nextQuery.hero = String(index)
-  router.replace({ query: nextQuery })
+  // Keep q + the tolerance the current answer was fetched with; add/drop hero.
+  const q = typeof route.query.q === 'string' ? route.query.q : ''
+  router.replace({ query: shareQuery(q, index, lastAskedThreshold.value) })
   if (import.meta.client) {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' })
@@ -314,7 +351,7 @@ function hideBrokenImage(event: Event) {
       {{ liveMessage }}
     </p>
 
-    <!-- ═══════════ IDLE — the hero + ask box ═══════════ -->
+    <!-- ═══════════ IDLE, the hero + ask box ═══════════ -->
     <section
       v-if="status === 'idle'"
       class="mx-auto max-w-[820px] px-5 pb-16 pt-[128px] animate-fade-up md:px-8"
@@ -360,7 +397,26 @@ function hideBrokenImage(event: Event) {
         {{ askHint }}
       </p>
 
-      <div class="mt-4.5 flex flex-wrap gap-2.5">
+      <!-- Relevance tolerance, set BEFORE asking. Binds to the same `threshold`
+           the results view uses, so the first query already honours it. No cards
+           to dim here yet, so a short hint explains what it does instead. -->
+      <div class="mt-7 max-w-[680px]">
+        <div class="flex items-center gap-3">
+          <span class="whitespace-nowrap text-sm text-text-secondary">{{ answerCopy?.tolerance }}</span>
+          <Slider
+            v-model="thresholdModel"
+            :min="0"
+            :max="1"
+            :step="0.01"
+            :aria-label="answerCopy?.tolerance"
+            class="max-w-[200px]"
+          />
+          <span class="w-9 font-mono text-xs tabular-nums text-text-secondary">{{ threshold.toFixed(2) }}</span>
+          <InfoTooltip :text="answerCopy?.toleranceHint" />
+        </div>
+      </div>
+
+      <div class="mt-6 flex flex-wrap gap-2.5">
         <button
           v-for="example in ask?.examples"
           :key="example"
@@ -376,7 +432,7 @@ function hideBrokenImage(event: Event) {
       </div>
     </section>
 
-    <!-- ═══════════ LOADING — the orbit spinner ═══════════ -->
+    <!-- ═══════════ LOADING, the orbit spinner ═══════════ -->
     <div
       v-else-if="status === 'loading'"
       class="animate-fade-up flex min-h-dvh items-center justify-center px-5"
@@ -384,7 +440,7 @@ function hideBrokenImage(event: Event) {
       <OrbitLoader :label="ask?.loading" />
     </div>
 
-    <!-- ═══════════ ANSWER — hero image + AI answer + sources ═══════════ -->
+    <!-- ═══════════ ANSWER, hero image + AI answer + sources ═══════════ -->
     <article
       v-else-if="status === 'answer'"
       class="pb-4 animate-fade-up"
@@ -519,6 +575,35 @@ function hideBrokenImage(event: Event) {
               </div>
             </div>
 
+            <!-- Relevance-tolerance slider: sets the cutoff a source's score must
+                 clear. Dragging dims the weak cards live (free, client-only); "ask
+                 again" re-runs the query with this cutoff. @keydown.stop keeps the
+                 arrow keys driving the slider, not the carousel's arrow-key paging. -->
+            <div
+              class="mb-6 flex items-center gap-3"
+              @keydown.stop
+            >
+              <span class="whitespace-nowrap text-sm text-text-secondary">{{ answerCopy?.tolerance }}</span>
+              <Slider
+                v-model="thresholdModel"
+                :min="0"
+                :max="1"
+                :step="0.01"
+                :aria-label="answerCopy?.tolerance"
+                class="max-w-[200px]"
+              />
+              <span class="w-9 font-mono text-xs tabular-nums text-text-secondary">{{ threshold.toFixed(2) }}</span>
+              <InfoTooltip :text="answerCopy?.toleranceHint" />
+              <button
+                v-if="thresholdChanged"
+                type="button"
+                class="ml-auto animate-fade-up whitespace-nowrap rounded-lg border border-accent-cyan/40 bg-accent-cyan/10 px-3 py-1.5 text-xs text-text-strong transition-colors hover:border-accent-cyan/70"
+                @click="submit"
+              >
+                {{ answerCopy?.askAgain }}
+              </button>
+            </div>
+
             <!-- Source carousel: every source except the one in the hero. Embla
                  handles scroll / drag / autoplay; clicking a card lifts it into the
                  hero (and the previous hero match drops back in here). -->
@@ -529,8 +614,11 @@ function hideBrokenImage(event: Event) {
                 class="basis-auto"
               >
                 <div
-                  class="w-64 overflow-hidden rounded-xl border bg-card/70 transition-colors hover:bg-card"
-                  :class="item.index === 0 ? 'border-accent-green/60' : 'border-transparent'"
+                  class="w-64 overflow-hidden rounded-xl border bg-card/70 transition duration-300 hover:bg-card"
+                  :class="[
+                    item.index === 0 ? 'border-accent-green/60' : 'border-transparent',
+                    item.src.score < threshold ? 'opacity-40 saturate-50' : ''
+                  ]"
                 >
                   <!-- The card body promotes this source into the hero. The "View
                        original" link is a sibling below, not nested, so we never put
@@ -590,7 +678,7 @@ function hideBrokenImage(event: Event) {
       </div>
     </article>
 
-    <!-- ═══════════ EMPTY — nothing crossed the event horizon ═══════════ -->
+    <!-- ═══════════ EMPTY, nothing crossed the event horizon ═══════════ -->
     <section
       v-else-if="status === 'empty'"
       class="flex min-h-dvh flex-col items-center justify-center px-5 py-24 text-center animate-fade-up"
@@ -618,7 +706,7 @@ function hideBrokenImage(event: Event) {
       </button>
     </section>
 
-    <!-- ═══════════ ERROR — the signal fell into a black hole ═══════════ -->
+    <!-- ═══════════ ERROR, the signal fell into a black hole ═══════════ -->
     <section
       v-else-if="status === 'error'"
       class="flex min-h-dvh flex-col items-center justify-center px-5 py-24 text-center animate-fade-up"

@@ -11,6 +11,11 @@ export default defineEventHandler(async (event) => {
     // Read the question from the POST body.
     const body = await readBody(event)
     const question = body?.question
+
+    // The slider sends its value too. Default 0.55, clamped to [0,1] so a stray
+    // value can't break the comparison below.
+    const threshold = Math.min(1, Math.max(0, Number(body?.threshold ?? 0.55)))
+
     if (!question) throw createError({ statusCode: 400, statusMessage: 'Missing question' })
 
     // Embed the user's question into a vector (same embed() as ingest, now with the query).
@@ -29,27 +34,24 @@ export default defineEventHandler(async (event) => {
     ranked.sort((a, b) => b.score - a.score)
     const top = ranked.slice(0, 5)
 
-    // Tuned for gemini-embedding-001: real astronomy questions score ~0.63+,
-    // while unrelated/nonsense queries top out around ~0.48 — so 0.55 sits in
-    // the gap and keeps gibberish from being treated as a real match.
-    const RELEVANCE_THRESHOLD = 0.55
+    // Only sources that clear the threshold feed Gemini. We still return all of
+    // top below, so the UI can show the weak ones dimmed.
+    const strong = top.filter((record) => record.score >= threshold)
 
-    // If even the best match is weak, don't pretend we found something relevant.
-    const best = top[0]
-    if (!best || best.score < RELEVANCE_THRESHOLD) {
+    // If nothing clears the bar, it's an empty result.
+    if (strong.length === 0) {
         return {
             question,
             answer: "I couldn't find anything about that in the APOD texts.",
             sources: [],
-            // Best similarity we saw — lets the UI tell "close but no match" apart
-            // from "clearly not space-related at all".
-            topScore: best?.score ?? 0
+            topScore: top[0]?.score ?? 0,
+            threshold
         }
     }
 
 
     // Build a context block from the retrieved APOD texts.
-    const context = top.map((record) => `${record.title} (${record.date})\n${record.explanation}`).join('\n\n')
+    const context = strong.map((record) => `${record.title} (${record.date})\n${record.explanation}`).join('\n\n')
 
     // The grounding prompt: tell the model to answer ONLY from these texts.
     const prompt = `You are an astronomy assistant. Answer the user's question using ONLY the APOD descriptions below. If the answer isn't in them, say you don't know instead of guessing. Keep it concise and mention which picture(s) you used. Answer in the same language as the user's question.
@@ -70,5 +72,5 @@ Question: ${question}`
       contents: prompt
     })
 
-    return { question, answer: response.text, sources: top }
+    return { question, answer: response.text, sources: top, threshold }
 })
