@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import { embed } from '../server/utils/embed'
+import { isUsableApod, toVectorItem } from '../server/utils/apodVector'
 import { Index } from '@upstash/vector'
 // import { writeFileSync, mkdirSync } from 'node:fs'
 // import type { ApodRecord } from '../shared/apod'
@@ -76,8 +77,8 @@ async function main() {
         chunkStart.setDate(chunkStart.getDate() + CHUNK_DAYS)
     }
 
-    // 2. Keep only image entries that actually have an explanation text.
-    const usable = entries.filter((e) => (e.media_type === 'image' || e.media_type === 'video') && e.explanation)
+    // 2. Keep only entries we can ground on and show (see apodVector).
+    const usable = entries.filter(isUsableApod)
     console.log(`Got ${usable.length} usable entries (images and videos) from ${entries.length}. Embedding...`)
 
     // 3. Embed each explanation and build our records.
@@ -130,20 +131,9 @@ async function main() {
         const slice = pending.slice(start, start + BATCH)
         const items = []
         for (const entry of slice) {
-            const vector = await embedWithRetry(entry.explanation)
+            const item = await toVectorItem(entry, embedWithRetry)
             await sleep(120) // gentle pacing within a batch
-            items.push({
-                id: entry.date,
-                vector,
-                metadata: {
-                    date: entry.date,
-                    title: entry.title,
-                    imageUrl: entry.url,
-                    explanation: entry.explanation,
-                    mediaType: entry.media_type,
-                    thumbnailUrl: entry.thumbnail_url ?? ''
-                }
-            })
+            items.push(item)
             done++
             console.log(`  ${done}/${pending.length}: ${entry.title}`)
         }
