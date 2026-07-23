@@ -1,11 +1,13 @@
 import { GoogleGenAI } from '@google/genai'
-import type { ApodRecord } from '#shared/apod.ts'
+import { Index } from '@upstash/vector'
+
+// import type { ApodRecord } from '#shared/apod.ts'
 // Import the vector shelf directly so it's bundled straight into the function.
 // A runtime file path / server-asset lookup isn't reliable across build presets
 // (Netlify); at ~7 MB the inlined JSON stays well within the function limit.
-import shelfData from '../../data/apod-vectors.json'
+// import shelfData from '../../data/apod-vectors.json'
 
-const shelf: ApodRecord[] = shelfData as ApodRecord[]
+// const shelf: ApodRecord[] = shelfData as ApodRecord[]
 
 export default defineEventHandler(async (event) => {
     // Read the question from the POST body.
@@ -22,6 +24,7 @@ export default defineEventHandler(async (event) => {
     const questionVector = await embed(question)
 
     // Score every shelf entry: cosine similarity between the question vector and each stored vector.
+    /*
     const ranked = shelf.map((record) => ({
         date: record.date,
         title: record.title,
@@ -31,13 +34,35 @@ export default defineEventHandler(async (event) => {
         thumbnailUrl: record.thumbnailUrl,
         score: cosineSimilarity(questionVector, record.vector)
     }))
+    */
 
     // Take the best matches as our sources.
+    /*
     ranked.sort((a, b) => b.score - a.score)
     const top = ranked.slice(0, 5)
+    */
 
-    // Only sources that clear the threshold feed Gemini. We still return all of
-    // top below, so the UI can show the weak ones dimmed.
+    const index = Index.fromEnv()
+
+    const matches = await index.query({
+        vector: questionVector,
+        topK: 5,
+        includeMetadata: true
+    })
+    const top = matches.map((match) => {
+        const m = match.metadata as Record<string, string>
+        return {
+            date: m.date,
+            title: m.title,
+            imageUrl: m.imageUrl,
+            explanation: m.explanation,
+            mediaType: m.mediaType,
+            thumbnailUrl: m.thumbnailUrl,
+            score: match.score
+        }
+    })
+
+    // Only sources that clear the threshold feed Gemini. We still return all of top below, so the UI can show the weak ones dimmed.
     const strong = top.filter((record) => record.score >= threshold)
 
     // If nothing clears the bar, it's an empty result.
@@ -50,7 +75,6 @@ export default defineEventHandler(async (event) => {
             threshold
         }
     }
-
 
     // Build a context block from the retrieved APOD texts.
     const context = strong.map((record) => `${record.title} (${record.date})\n${record.explanation}`).join('\n\n')

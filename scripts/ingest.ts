@@ -1,12 +1,13 @@
 import 'dotenv/config'
-import { writeFileSync, mkdirSync } from 'node:fs'
 import { embed } from '../server/utils/embed'
-import type { ApodRecord } from '../shared/apod'
+import { Index } from '@upstash/vector'
+// import { writeFileSync, mkdirSync } from 'node:fs'
+// import type { ApodRecord } from '../shared/apod'
 
 const NASA_API_KEY = process.env.NASA_API_KEY
 const NASA_APOD_API_URL = process.env.NUXT_NASA_APOD_API_URL
 
-const DAYS_BACK = 365 // how far back from today to fetch (365 ≈ one year)
+const DAYS_BACK = 1095 // how far back from today to fetch (1095 ≈ three years)
 const CHUNK_DAYS = 90 // NASA 500s on very large ranges, so fetch in windows this size
 
 // APOD expects dates as YYYY-MM-DD.
@@ -76,10 +77,11 @@ async function main() {
     }
 
     // 2. Keep only image entries that actually have an explanation text.
-   const usable = entries.filter((e) => (e.media_type === 'image' || e.media_type === 'video') && e.explanation)
-    console.log(`Got ${usable.length} usable images from ${entries.length} entries. Embedding...`)
+    const usable = entries.filter((e) => (e.media_type === 'image' || e.media_type === 'video') && e.explanation)
+    console.log(`Got ${usable.length} usable entries (images and videos) from ${entries.length}. Embedding...`)
 
     // 3. Embed each explanation and build our records.
+    /*
     const records: ApodRecord[] = []
     for (let i = 0; i < usable.length; i++) {
         const entry = usable[i]
@@ -96,11 +98,71 @@ async function main() {
         })
         console.log(`  ${i + 1}/${usable.length}: ${entry.title}`)
     }
+    */
 
-    // 4. Write the filled shelf to disk.
+    // 3. Embed + upsert in small batches, skipping days already stored.
+    const index = Index.fromEnv()
+
+    // Gather the day-IDs already in the DB (IDs are the APOD dates). A re-run
+    // after an aborted ingest then only embeds the days it hasn't done yet, so
+    // we never burn embedding quota re-doing finished days. Cursor starts at
+    // "0"; an empty nextCursor means the last page.
+    const existing = new Set<string>()
+    let cursor = '0'
+    while (cursor !== '') {
+        const page = await index.range({ cursor, limit: 1000, includeMetadata: false })
+        for (const v of page.vectors) existing.add(String(v.id))
+        cursor = page.nextCursor
+    }
+    console.log(`${existing.size} entries already in the DB — skipping those.`)
+
+    const pending = usable.filter((entry) => !existing.has(entry.date))
+    console.log(`${pending.length} new entries to embed.`)
+
+    // Each batch is embedded and upserted right away, so an abort on a quota
+    // limit keeps everything up to the last finished batch. Pause between
+    // batches to stay under the per-minute limit.
+    const BATCH = 50
+    const PAUSE_MS = 30_000
+
+    let done = 0
+    for (let start = 0; start < pending.length; start += BATCH) {
+        const slice = pending.slice(start, start + BATCH)
+        const items = []
+        for (const entry of slice) {
+            const vector = await embedWithRetry(entry.explanation)
+            await sleep(120) // gentle pacing within a batch
+            items.push({
+                id: entry.date,
+                vector,
+                metadata: {
+                    date: entry.date,
+                    title: entry.title,
+                    imageUrl: entry.url,
+                    explanation: entry.explanation,
+                    mediaType: entry.media_type,
+                    thumbnailUrl: entry.thumbnail_url ?? ''
+                }
+            })
+            done++
+            console.log(`  ${done}/${pending.length}: ${entry.title}`)
+        }
+        await index.upsert(items)
+        console.log(`Upserted batch — ${done}/${pending.length} new entries done.`)
+        if (start + BATCH < pending.length) {
+            console.log(`Pausing ${PAUSE_MS / 1000}s before next batch...`)
+            await sleep(PAUSE_MS)
+        }
+    }
+
+    console.log(`Done! ${done} new vectors upserted (${existing.size + done} total in the DB).`)
+
+    // Plan A (kept for reference): write the filled shelf to disk as JSON.
+    /*
     mkdirSync('data', { recursive: true })
     writeFileSync('data/apod-vectors.json', JSON.stringify(records, null, 2))
     console.log(`Done! Wrote ${records.length} records to data/apod-vectors.json`)
+    */
 }
 
 main()
