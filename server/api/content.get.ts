@@ -120,6 +120,21 @@ export default defineEventHandler(() => {
       heading: 'Understanding RAG by building it by hand',
       lead1: "I'm a frontend developer, curious about how AI actually works under the hood. Instead of reaching for a framework that hides everything, I wanted to build Retrieval-Augmented Generation from the ground up, so I could actually explain what embedding, retrieval and grounded generation each do, in my own words.",
       lead2: 'So every moving part here is deliberately visible: the embedding step calls a hosted model, the similarity search is a few lines of hand-written math over a JSON file (no black-box vector database), and the language model is told to answer only from the retrieved NASA texts.',
+      journey: {
+        label: 'How it got here',
+        steps: [
+          {
+            dropped: 'Local Transformers.js embeddings (Xenova/paraphrase-multilingual-MiniLM-L12-v2), in the function.',
+            reason: "Too heavy for Netlify's 250 MB function limit.",
+            now: 'Google Gemini embeddings: hosted, tiny to ship.'
+          },
+          {
+            dropped: 'Hand-written cosine over one plain JSON file.',
+            reason: 'Lovely to learn on, but it will not scale.',
+            now: 'A real vector database (next up).'
+          }
+        ]
+      },
       techStackLabel: 'Stack',
       techStack: [
         { label: 'Framework', value: 'Nuxt 4 + Vue, Nitro server routes' },

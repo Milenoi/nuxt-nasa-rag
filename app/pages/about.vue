@@ -29,6 +29,32 @@ useSeoMeta({
       {{ about?.lead2 }}
     </p>
 
+    <!-- The road here: the superseded plan A (struck through), why it changed,
+         and the plan B it became. -->
+    <div class="mx-auto mt-14 max-w-[56ch] text-left">
+      <div class="mb-5 text-xs uppercase tracking-wider text-text-faint">
+        {{ about?.journey?.label }}
+      </div>
+      <ul class="m-0 flex list-none flex-col gap-6 p-0">
+        <li
+          v-for="step in about?.journey?.steps"
+          :key="step.now"
+          class="border-l-2 border-border pl-4"
+        >
+          <s class="text-sm leading-relaxed text-text-faint">{{ step.dropped }}</s>
+          <p class="mt-1.5 text-xs leading-relaxed text-text-muted">
+            {{ step.reason }}
+          </p>
+          <p class="mt-2 text-sm leading-relaxed text-text-strong">
+            <span
+              aria-hidden="true"
+              class="text-accent-green"
+            >→ </span>{{ step.now }}
+          </p>
+        </li>
+      </ul>
+    </div>
+
     <!-- Stack -->
     <div class="mb-1 mt-14 text-xs uppercase tracking-wider text-text-faint">
       {{ about?.techStackLabel }}
