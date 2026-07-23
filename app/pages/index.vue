@@ -7,6 +7,8 @@
 //                  ↘ error    (request failed)
 // The pipeline footer mirrors `status` via useAskStatus().
 import { marked } from 'marked'
+import Autoplay from 'embla-carousel-autoplay'
+import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel'
 
 type Source = {
   date: string
@@ -45,7 +47,19 @@ const answer = ref('')
 // Sanitized HTML of the rendered Markdown answer (built in the watcher below).
 const answerHtml = ref('')
 const sources = ref<Source[]>([])
-const active = ref(0)
+// Embla drives the source carousel (scroll / drag / autoplay). We hold its API so
+// we can re-measure and jump back to the start after a hero swap changes the row.
+const carouselApi = ref<CarouselApi>()
+// Whether the arrows can still page in each direction — kept in sync with Embla's
+// own scroll state so the buttons disable at the ends, like the old slider did.
+const canScrollPrev = ref(false)
+const canScrollNext = ref(false)
+// Autoplay pages the row gently. stopOnMouseEnter pauses on hover; stopOnInteraction
+// halts it for good once someone drags or clicks a card, so it never fights a reader.
+// playOnInit:false lets us skip it entirely under prefers-reduced-motion.
+const autoplayPlugins = [
+  Autoplay({ delay: 4500, stopOnMouseEnter: true, stopOnInteraction: true, playOnInit: false })
+]
 // A short, human-readable reason shown on the error screen so it's clear WHY
 // the request failed (e.g. the Gemini quota) versus genuinely finding nothing.
 const errorDetail = ref('')
@@ -121,7 +135,6 @@ async function submit() {
   const id = ++requestId
   status.value = 'loading'
   timing.value = null
-  active.value = 0
   heroIndex.value = 0
   const started = performance.now()
   try {
@@ -178,7 +191,6 @@ function clearLocal() {
   answer.value = ''
   sources.value = []
   queryEcho.value = ''
-  active.value = 0
   heroIndex.value = 0
   errorDetail.value = ''
   emptyScore.value = 1
@@ -236,20 +248,37 @@ const sliderSources = computed(() =>
     .filter((item) => item.index !== heroIndex.value)
 )
 
-// Shift the track by one card (width + gap) per step. Card is w-64 (256px) + gap-4 (16px).
-const CARD_STEP = 256 + 16
-function prevSource() {
-  active.value = Math.max(0, active.value - 1)
+// Grab Embla's API on mount, track the scroll state for the arrows, and start
+// autoplay — unless the visitor asked for less motion, in which case drag and the
+// arrows still work, it just doesn't page itself.
+function onCarouselInit(api: CarouselApi) {
+  carouselApi.value = api
+  const sync = () => {
+    canScrollPrev.value = api?.canScrollPrev() ?? false
+    canScrollNext.value = api?.canScrollNext() ?? false
+  }
+  api?.on('select', sync)
+  api?.on('reInit', sync)
+  sync()
+  // Start autoplay via the API's plugin handle — but on the NEXT frame. Calling
+  // play() synchronously inside init-api runs before Autoplay's own init settles
+  // (playOnInit:false), so it no-ops; deferring one frame makes it stick.
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  if (!reduce) requestAnimationFrame(() => api?.plugins().autoplay?.play())
 }
-function nextSource() {
-  active.value = Math.min(sliderSources.value.length - 1, active.value + 1)
-}
+
+// Promoting a card into the hero changes which cards the row holds, so Embla has to
+// re-measure and snap back to the first card.
+watch(sliderSources, async () => {
+  await nextTick()
+  carouselApi.value?.reInit()
+  carouselApi.value?.scrollTo(0, true)
+})
 
 // Clicking a source card lifts it into the hero, resets the row to the start, and
 // scrolls back up so the swap is visible (honouring reduced-motion).
 function selectSource(index: number) {
   heroIndex.value = index
-  active.value = 0
   // Reflect the featured source in the URL (omit for the top match / index 0).
   const nextQuery: Record<string, string> = {}
   if (typeof route.query.q === 'string') nextQuery.q = route.query.q
@@ -331,12 +360,12 @@ function hideBrokenImage(event: Event) {
         {{ askHint }}
       </p>
 
-      <div class="mt-[18px] flex flex-wrap gap-2.5">
+      <div class="mt-4.5 flex flex-wrap gap-2.5">
         <button
           v-for="example in ask?.examples"
           :key="example"
           type="button"
-          class="inline-flex items-center gap-2 rounded-full border border-white/[0.11] bg-white/[0.03] px-4 py-2.5 text-sm text-text-body transition-colors hover:border-white/[0.28] hover:text-foreground"
+          class="inline-flex items-center gap-2 rounded-full border border-white/11 bg-white/3 px-4 py-2.5 text-sm text-text-body transition-colors hover:border-white/[0.28] hover:text-foreground"
           @click="useExample(example)"
         >
           <span
@@ -452,105 +481,111 @@ function hideBrokenImage(event: Event) {
           class="mx-auto max-w-[760px]"
           aria-labelledby="sources-heading"
         >
-          <div class="mb-5 mt-12 flex items-baseline justify-between">
-            <div class="flex items-baseline gap-3">
-              <h3
-                id="sources-heading"
-                class="font-serif text-2xl text-foreground"
-              >
-                {{ answerCopy?.sourcesHeading }}
-              </h3>
-              <span class="text-sm text-text-faint">{{ sources.length }} {{ answerCopy?.sourcesCount }}</span>
-            </div>
-            <div class="flex gap-2.5">
-              <button
-                type="button"
-                :aria-label="answerCopy?.prevSource"
-                :disabled="active === 0"
-                class="grid size-9 place-items-center rounded-lg border border-white/10 bg-white/5 text-base text-text-strong transition-colors enabled:hover:border-white/30 disabled:cursor-default disabled:text-white/20 disabled:opacity-60"
-                @click="prevSource"
-              >
-                <span aria-hidden="true">←</span>
-              </button>
-              <button
-                type="button"
-                :aria-label="answerCopy?.nextSource"
-                :disabled="active >= sliderSources.length - 1"
-                class="grid size-9 place-items-center rounded-lg border border-white/10 bg-white/5 text-base text-text-strong transition-colors enabled:hover:border-white/30 disabled:cursor-default disabled:text-white/20 disabled:opacity-60"
-                @click="nextSource"
-              >
-                <span aria-hidden="true">→</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Source carousel: every source except the one in the hero. Arrows page
-               through; clicking a card lifts it into the hero (and the previous
-               hero match drops back in here). -->
-          <div class="overflow-hidden pb-4">
-          <ul
-            class="flex list-none gap-4 py-1 transition-transform duration-500 ease-out"
-            :style="{ transform: `translateX(${-active * CARD_STEP}px)` }"
+          <Carousel
+            class="relative"
+            :opts="{ align: 'start' }"
+            :plugins="autoplayPlugins"
+            @init-api="onCarouselInit"
           >
-            <li
-              v-for="item in sliderSources"
-              :key="item.src.date + item.src.title"
-              class="w-64 flex-none overflow-hidden rounded-xl border bg-card/70 transition-colors hover:bg-card"
-              :class="item.index === 0 ? 'border-accent-green/60' : 'border-transparent'"
-            >
-              <!-- The card body promotes this source into the hero. The "View
-                   original" link is a sibling below, not nested, so we never put
-                   an <a> inside a <button> (invalid + breaks keyboard/AT). -->
-              <button
-                type="button"
-                :aria-label="heroCardLabel(item.src.title)"
-                class="block w-full cursor-pointer text-left"
-                @click="selectSource(item.index)"
+            <div class="mb-5 mt-12 flex items-baseline justify-between">
+              <div class="flex items-baseline gap-3">
+                <h3
+                  id="sources-heading"
+                  class="font-serif text-2xl text-foreground"
+                >
+                  {{ answerCopy?.sourcesHeading }}
+                </h3>
+                <span class="text-sm text-text-faint">{{ sources.length }} {{ answerCopy?.sourcesCount }}</span>
+              </div>
+              <div class="flex gap-2.5">
+                <button
+                  type="button"
+                  :aria-label="answerCopy?.prevSource"
+                  :disabled="!canScrollPrev"
+                  class="grid size-9 place-items-center rounded-lg border border-white/10 bg-white/5 text-base text-text-strong transition-colors enabled:hover:border-white/30 disabled:cursor-default disabled:text-white/20 disabled:opacity-60"
+                  @click="carouselApi?.scrollPrev()"
+                >
+                  <span aria-hidden="true">←</span>
+                </button>
+                <button
+                  type="button"
+                  :aria-label="answerCopy?.nextSource"
+                  :disabled="!canScrollNext"
+                  class="grid size-9 place-items-center rounded-lg border border-white/10 bg-white/5 text-base text-text-strong transition-colors enabled:hover:border-white/30 disabled:cursor-default disabled:text-white/20 disabled:opacity-60"
+                  @click="carouselApi?.scrollNext()"
+                >
+                  <span aria-hidden="true">→</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Source carousel: every source except the one in the hero. Embla
+                 handles scroll / drag / autoplay; clicking a card lifts it into the
+                 hero (and the previous hero match drops back in here). -->
+            <CarouselContent class="pt-1 pb-4">
+              <CarouselItem
+                v-for="item in sliderSources"
+                :key="item.src.date + item.src.title"
+                class="basis-auto"
               >
                 <div
-                  class="relative h-40 overflow-hidden"
-                  :style="{ background: cardGradient(item.index) }"
+                  class="w-64 overflow-hidden rounded-xl border bg-card/70 transition-colors hover:bg-card"
+                  :class="item.index === 0 ? 'border-accent-green/60' : 'border-transparent'"
                 >
-                  <img
-                    v-if="item.src.imageUrl"
-                    :src="item.src.imageUrl"
-                    :alt="item.src.title"
-                    loading="lazy"
-                    class="absolute inset-0 h-full w-full object-cover"
-                    @error="hideBrokenImage"
+                  <!-- The card body promotes this source into the hero. The "View
+                       original" link is a sibling below, not nested, so we never put
+                       an <a> inside a <button> (invalid + breaks keyboard/AT). -->
+                  <button
+                    type="button"
+                    :aria-label="heroCardLabel(item.src.title)"
+                    class="block w-full cursor-pointer text-left"
+                    @click="selectSource(item.index)"
                   >
-                </div>
-                <div class="px-4 pt-3.5">
-                  <div class="font-mono text-xs text-text-faint">
-                    {{ item.src.date }}
-                  </div>
-                  <div class="mt-1.5 font-serif text-base leading-tight text-foreground">
-                    {{ item.src.title }}
-                  </div>
-                  <div class="mt-3 flex items-center gap-2">
-                    <div class="h-0.5 flex-1 overflow-hidden rounded-full bg-white/10">
-                      <div
-                        class="h-full rounded-full bg-gradient-accent"
-                        :style="{ width: `${Math.round(item.src.score * 100)}%` }"
-                      />
+                    <div
+                      class="relative h-40 overflow-hidden"
+                      :style="{ background: cardGradient(item.index) }"
+                    >
+                      <img
+                        v-if="item.src.imageUrl"
+                        :src="item.src.imageUrl"
+                        :alt="item.src.title"
+                        loading="lazy"
+                        class="absolute inset-0 h-full w-full object-cover"
+                        @error="hideBrokenImage"
+                      >
                     </div>
-                    <span class="font-mono text-xs text-text-secondary">{{ item.src.score.toFixed(2) }}</span>
+                    <div class="px-4 pt-3.5">
+                      <div class="font-mono text-xs text-text-faint">
+                        {{ item.src.date }}
+                      </div>
+                      <div class="mt-1.5 font-serif text-base leading-tight text-foreground">
+                        {{ item.src.title }}
+                      </div>
+                      <div class="mt-3 flex items-center gap-2">
+                        <div class="h-0.5 flex-1 overflow-hidden rounded-full bg-white/10">
+                          <div
+                            class="h-full rounded-full bg-gradient-accent"
+                            :style="{ width: `${Math.round(item.src.score * 100)}%` }"
+                          />
+                        </div>
+                        <span class="font-mono text-xs text-text-secondary">{{ item.src.score.toFixed(2) }}</span>
+                      </div>
+                    </div>
+                  </button>
+                  <div class="px-4 pb-4 pt-2.5">
+                    <a
+                      :href="item.src.imageUrl"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="inline-block text-xs text-star-link hover:text-white"
+                    >
+                      {{ answerCopy?.viewOriginal }} <span aria-hidden="true">↗</span>
+                    </a>
                   </div>
                 </div>
-              </button>
-              <div class="px-4 pb-4 pt-2.5">
-                <a
-                  :href="item.src.imageUrl"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="inline-block text-xs text-star-link hover:text-white"
-                >
-                  {{ answerCopy?.viewOriginal }} <span aria-hidden="true">↗</span>
-                </a>
-              </div>
-            </li>
-          </ul>
-          </div>
+              </CarouselItem>
+            </CarouselContent>
+          </Carousel>
         </section>
       </div>
     </article>
@@ -658,7 +693,9 @@ function hideBrokenImage(event: Event) {
 .answer-prose :deep(ul),
 .answer-prose :deep(ol) {
   margin: 0 0 1rem;
-  padding-left: 1.25rem;
+  /* No left padding: Tailwind's preflight strips list markers, so the padding
+     would only produce a stray indent that misaligns the list with the prose. */
+  padding-left: 0;
   color: var(--text-body);
 }
 .answer-prose :deep(li) {
