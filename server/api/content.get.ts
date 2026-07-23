@@ -5,8 +5,6 @@
 export default defineEventHandler(() => {
   return {
     siteName: 'APOD Ask',
-    // Site chrome: brand + nav links (labels here, routes are structural). The
-    // GitHub link and sibling site mirror the caching demo's cross-linking.
     header: {
       brand: 'APOD Ask',
       github: 'GitHub ↗',
@@ -18,8 +16,6 @@ export default defineEventHandler(() => {
       { label: 'About', link: '/about' }
     ],
     footer: {
-      // The RAG pipeline, shown as a live status chain (mirrors the sibling
-      // site's cache chain). Each stage lights up as a question is answered.
       stages: ['Query', 'Retrieve', 'Rank', 'Answer'],
       idleLabel: 'idle',
       meta: 'embeddings · retrieval · NASA APOD'
@@ -55,10 +51,8 @@ export default defineEventHandler(() => {
       viewOriginal: 'View original',
       prevSource: 'Previous source',
       nextSource: 'Next source',
-      // {title} is replaced with the source title in the component.
       showInHero: 'Show {title} in the hero'
     },
-    // Screen-reader announcements for the Ask state transitions (visually hidden).
     a11y: {
       answerReady: 'Answer ready.',
       noResults: 'No matching results found.',
@@ -67,9 +61,7 @@ export default defineEventHandler(() => {
     states: {
       empty: "I couldn't find anything about that in the APOD texts.",
       emptyHeading: 'Nothing crossed the event horizon.',
-      // Appended to `empty` to nudge toward a space-related topic.
       emptyHintSuffix: 'Try an astronomy topic — stars, galaxies, nebulae, planets, comets.',
-      // Shown when the best match is so weak the query clearly isn't about space.
       nonsense: "Come on — don't waste Melanie's tokens on questions that have nothing to do with space.",
       error: 'Something went wrong reaching the stars. Please try again.',
       errorHeading: 'The signal fell into a black hole.',
@@ -136,7 +128,6 @@ export default defineEventHandler(() => {
       label: 'APOD caching demo',
       url: 'https://nuxt-cache-project.netlify.app/'
     },
-    // Copy for the draggable Taurus easter egg (decorative, hidden from AT).
     taurus: {
       label: 'Taurus',
       labelMoved: 'Not Taurus anymore'
