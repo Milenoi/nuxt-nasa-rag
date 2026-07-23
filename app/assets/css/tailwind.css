@@ -187,6 +187,13 @@
   a:hover {
     color: #fff;
   }
+  /* Tailwind v4's preflight sets buttons to cursor: default; restore the pointer
+     so every button and toggle reads as clickable (suggestions, burger, ask,
+     scroll-to-top, carousel arrows, ...). */
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
   ::selection {
     background: rgba(56, 214, 238, 0.3);
   }

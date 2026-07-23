@@ -380,7 +380,7 @@ const cardImage = (src: Source) => (isVideo(src) ? src.thumbnailUrl : src.imageU
     <!-- ═══════════ IDLE, the hero + ask box ═══════════ -->
     <section
       v-if="status === 'idle'"
-      class="mx-auto flex min-h-[calc(100dvh-3.25rem)] max-w-[820px] flex-col px-5 pb-16 pt-[19vh] animate-fade-up md:px-8"
+      class="mx-auto flex min-h-[calc(100dvh-3.25rem)] max-w-[820px] flex-col px-5 pb-16 pt-[12vh] animate-fade-up md:px-8 md:pt-[19vh]"
     >
       <p class="mb-6 text-sm text-text-faint">
         {{ hero?.eyebrow }}

@@ -102,7 +102,7 @@ const highlighted = snippets.map((s) => ({ ...s, html: highlight(s.code) }))
 
 <template>
   <section class="animate-fade-up mx-auto min-h-dvh max-w-3xl px-5 pb-40 pt-32 md:px-8">
-    <div class="text-center">
+    <div class="text-left md:text-center">
       <p class="mb-3 text-sm font-medium tracking-wide text-text-muted">
         {{ hw?.tagline }}
       </p>
@@ -186,7 +186,7 @@ const highlighted = snippets.map((s) => ({ ...s, html: highlight(s.code) }))
       </li>
     </ol>
 
-    <aside class="mx-auto mt-6 max-w-[56ch] text-center">
+    <aside class="mx-auto mt-6 max-w-[56ch] text-left md:text-center">
       <p class="text-sm leading-relaxed text-text-muted">
         {{ hw?.footnote }}
         <a

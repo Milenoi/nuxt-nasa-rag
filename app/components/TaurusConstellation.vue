@@ -1,11 +1,13 @@
 <script setup lang="ts">
 // The Taurus constellation, a small easter egg. Its stars can be dragged: grab
 // any point and the connecting lines follow live. The brightest reddish star,
-// Aldebaran (the bull's eye), carries a personal title tooltip.
+// Aldebaran (the bull's eye), opens a personal note in a popover on click
+// (works on touch too, unlike the old SVG <title> hover tooltip).
 //
 // It lives just above the page content (not in the -z StarField) so the tiny
 // star hit-targets can receive pointer events; everything else stays
 // click-through. Hidden on small screens to keep them uncluttered.
+import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover'
 
 type Star = { id: string; x: number; y: number }
 
@@ -64,6 +66,9 @@ const leg1Line = computed(() => `${pt('c')} ${pt('leg1')}`)
 const leg2Line = computed(() => `${pt('ald')} ${pt('leg2')}`)
 
 const svgRef = ref<SVGSVGElement | null>(null)
+
+// Aldebaran easter-egg popover, click-controlled (see the template for why).
+const eggOpen = ref(false)
 let dragging: Star | null = null
 
 function startDrag(star: Star, event: PointerEvent) {
@@ -94,6 +99,7 @@ function endDrag() {
     class="pointer-events-none fixed left-1/2 top-[56px] z-0 h-[220px] w-[300px] -translate-x-1/2 overflow-hidden opacity-40 [animation:drift_14s_ease-in-out_infinite] sm:left-auto sm:right-[70px] sm:top-[96px] sm:h-[320px] sm:w-[440px] sm:translate-x-0 sm:opacity-50 2xl:z-40 2xl:opacity-60"
     aria-hidden="true"
   >
+    <Popover v-model:open="eggOpen">
     <svg
       ref="svgRef"
       viewBox="0 0 460 340"
@@ -138,19 +144,21 @@ function endDrag() {
           r="3"
           class="taurus-eye"
         />
-        <circle
-          class="star-hit"
-          :cx="byId('ald').x"
-          :cy="byId('ald').y"
-          r="13"
-          fill="transparent"
-          @pointerdown="startDrag(byId('ald'), $event)"
-          @pointermove="onMove"
-          @pointerup="endDrag"
-          @pointercancel="endDrag"
-        >
-          <title>Aldebaran, the eye of Taurus. Melanie's birthday is in April, so she is a Taurus.</title>
-        </circle>
+        <!-- Aldebaran stays fixed (not draggable) so a click reliably opens the
+             easter-egg popover. The circle is only the anchor; the popover
+             CONTENT lives outside the <svg> (below </svg>), because an HTML
+             element declared inside <svg> is created in the SVG namespace and
+             won't render. A native click drives the open state. -->
+        <PopoverAnchor as-child>
+          <circle
+            class="star-egg"
+            :cx="byId('ald').x"
+            :cy="byId('ald').y"
+            r="13"
+            fill="transparent"
+            @click="eggOpen = !eggOpen"
+          />
+        </PopoverAnchor>
       </g>
 
       <!-- the rest of the draggable stars -->
@@ -180,6 +188,13 @@ function endDrag() {
       </template>
     </svg>
 
+      <!-- Content sits outside <svg> so it renders in the HTML namespace; it
+           still anchors to the star via reka's PopoverAnchor above. -->
+      <PopoverContent class="w-auto max-w-64 text-sm leading-relaxed">
+        {{ taurus?.egg }}
+      </PopoverContent>
+    </Popover>
+
     <div class="taurus-label absolute bottom-0.5 left-2 font-mono text-[11px] uppercase tracking-[0.22em]">
       {{ moved ? taurus?.labelMoved : taurus?.label }}
     </div>
@@ -195,6 +210,11 @@ function endDrag() {
 }
 .star-hit:active {
   cursor: grabbing;
+}
+/* Aldebaran is fixed (not draggable) and opens the easter-egg popover on click. */
+.star-egg {
+  pointer-events: auto;
+  cursor: pointer;
 }
 
 /* Decorative constellation colours, driven by the design tokens. */

@@ -14,11 +14,11 @@ useSeoMeta({
 </script>
 
 <template>
-  <section class="animate-fade-up mx-auto min-h-dvh max-w-3xl px-5 pb-40 pt-32 text-center md:px-8">
+  <section class="animate-fade-up mx-auto min-h-dvh max-w-3xl px-5 pb-40 pt-32 text-left md:px-8 md:text-center">
     <p class="mb-3 text-sm font-medium tracking-wide text-text-muted">
       {{ about?.tagline }}
     </p>
-    <h1 class="mx-auto mb-6 max-w-[16ch] text-balance font-serif text-[clamp(38px,5.5vw,60px)] font-light leading-tight tracking-tight text-text-strong">
+    <h1 class="mb-6 text-balance font-serif text-[clamp(38px,5.5vw,60px)] font-light leading-tight tracking-tight text-text-strong md:mx-auto md:max-w-[16ch]">
       {{ about?.heading }}
     </h1>
 

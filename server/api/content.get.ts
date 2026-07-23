@@ -82,8 +82,8 @@ export default defineEventHandler(() => {
       retryOther: 'Ask something else'
     },
     howItWorks: {
-      tagline: 'Retrieval-Augmented Generation, in plain sight',
-      heading: 'How it works',
+      tagline: 'How it works',
+      heading: 'Retrieval-Augmented Generation, in plain sight',
       lead: 'Every answer is built in four small steps, from your question to a grounded reply. You can follow exactly how retrieval-augmented generation turns a question into an answer drawn only from real NASA texts.',
       steps: [
         {
@@ -117,7 +117,7 @@ export default defineEventHandler(() => {
     },
     about: {
       tagline: 'A learning project',
-      heading: 'Understanding RAG by building it by hand',
+      heading: 'Learning RAG by building it by hand',
       lead1: "I'm a frontend developer, curious about how AI actually works under the hood. Instead of reaching for a framework that hides everything, I wanted to build Retrieval-Augmented Generation from the ground up, so I could actually explain what embedding, retrieval and grounded generation each do, in my own words.",
       lead2: 'So every moving part here is deliberately visible: the embedding step calls a hosted model, the similarity search ranks stored vectors by cosine distance (I first wrote this by hand, then moved it to a hosted vector database), and the language model is told to answer only from the retrieved NASA texts.',
       journey: {
@@ -160,7 +160,8 @@ export default defineEventHandler(() => {
     },
     taurus: {
       label: 'Taurus',
-      labelMoved: 'Not Taurus anymore'
+      labelMoved: 'Not Taurus anymore',
+      egg: "Aldebaran, the eye of Taurus. Melanie's birthday is in April, so she is a Taurus."
     }
   }
 })
