@@ -144,6 +144,7 @@ export default defineEventHandler(() => {
         { label: 'Data', value: 'NASA Astronomy Picture of the Day API' },
         { label: 'Hosting', value: 'Netlify' }
       ],
+      freeTierNote: 'This is deliberately a free-tier demo, so it can hit the daily quota. A hobby project, built to learn and to show, not to run up costs.',
       cta: 'View the source on GitHub ↗',
       creditText: 'A sibling to the',
       builtBy:

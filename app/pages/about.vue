@@ -72,11 +72,15 @@ useSeoMeta({
       </div>
     </dl>
 
+    <p class="mx-auto mt-9 max-w-[52ch] text-sm leading-relaxed text-text-faint">
+      {{ about?.freeTierNote }}
+    </p>
+
     <a
       :href="githubUrl"
       target="_blank"
       rel="noopener"
-      class="mt-10 inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-5 py-3 text-sm font-medium text-foreground transition-colors hover:border-white/30 hover:bg-white/10"
+      class="mt-8 inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-5 py-3 text-sm font-medium text-foreground transition-colors hover:border-white/30 hover:bg-white/10"
     >
       {{ about?.cta }}
     </a>
