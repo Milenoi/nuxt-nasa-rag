@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// About: the learning motivation behind the project and the exact stack — which
+// About: the learning motivation behind the project and the exact stack, which
 // model, which free tier, which APIs. Mirrors the sibling site's about page.
 const { data: content } = await useFetch('/api/content', { key: 'content' })
 const about = computed(() => content.value?.about)
@@ -7,7 +7,7 @@ const sibling = computed(() => content.value?.sibling)
 const githubUrl = computed(() => content.value?.header?.githubUrl)
 
 useSeoMeta({
-  title: 'About — APOD Ask',
+  title: 'About | APOD Ask',
   description:
     'A hands-on RAG learning project over NASA APOD: local Transformers.js embeddings, hand-written cosine search, and Google Gemini for grounded answers.'
 })

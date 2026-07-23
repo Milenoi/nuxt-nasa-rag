@@ -12,7 +12,7 @@ const DIMENSIONS = 768
 
 // L2-normalize a vector to unit length. Reduced-dimension Gemini embeddings are
 // NOT normalized automatically (only the full 3072-dim output is), so we do it
-// here — which keeps cosineSimilarity() a plain dot product.
+// here, which keeps cosineSimilarity() a plain dot product.
 function normalize(vector: number[]): number[] {
     const length = Math.sqrt(vector.reduce((sum, value) => sum + value * value, 0))
     return length === 0 ? vector : vector.map((value) => value / length)

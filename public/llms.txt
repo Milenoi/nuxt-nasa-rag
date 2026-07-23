@@ -2,11 +2,11 @@
 
 > A hands-on Retrieval-Augmented Generation (RAG) demo over NASA's Astronomy Picture of the Day (APOD). Ask an astronomy question in natural language and get an answer grounded only in real APOD explanation texts, with the source images shown.
 
-APOD Ask is a learning and portfolio project by Melanie Stief. The retrieval is deliberately hand-written and fully visible — there is no black-box vector database. The question and the APOD texts are embedded with Google's multilingual Gemini embedding model, ranked by a few lines of hand-written cosine similarity over a plain JSON file, and answered by Google Gemini with a strict "answer only from these texts" grounding prompt. Questions can be asked in any language (e.g. German questions match the English APOD texts).
+APOD Ask is a learning and portfolio project by Melanie Stief. The retrieval is deliberately hand-written and fully visible. There is no black-box vector database. The question and the APOD texts are embedded with Google's multilingual Gemini embedding model, ranked by a few lines of hand-written cosine similarity over a plain JSON file, and answered by Google Gemini with a strict "answer only from these texts" grounding prompt. Questions can be asked in any language (e.g. German questions match the English APOD texts).
 
 ## Pages
 
-- [Ask](https://nuxt-rag.netlify.app/): The main page — ask an astronomy question and get a grounded answer with the source images.
+- [Ask](https://nuxt-rag.netlify.app/): The main page: ask an astronomy question and get a grounded answer with the source images.
 - [How it works](https://nuxt-rag.netlify.app/how-it-works): The RAG pipeline as a four-step timeline (embed, retrieve, rank, generate) with real code excerpts.
 - [About](https://nuxt-rag.netlify.app/about): The learning motivation and the exact tech stack.
 
@@ -21,5 +21,5 @@ APOD Ask is a learning and portfolio project by Melanie Stief. The retrieval is 
 
 ## Related
 
-- [APOD caching demo](https://nuxt-cache-project.netlify.app/): Sibling project — a Nuxt 4 demo of multi-layer caching (Redis + TanStack Query) over the same NASA APOD API.
+- [APOD caching demo](https://nuxt-cache-project.netlify.app/): Sibling project: a Nuxt 4 demo of multi-layer caching (Redis + TanStack Query) over the same NASA APOD API.
 - [Source on GitHub](https://github.com/Milenoi/nuxt-nasa-rag)

@@ -4,12 +4,12 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
-  APOD Ask — dark-only, editorial space theme.
+  APOD Ask, dark-only, editorial space theme.
   Tokens mirror the Claude Design "APOD Ask" handoff.
 */
 
 :root {
-  /* shadcn semantic tokens (dark values — app is dark-only) */
+  /* shadcn semantic tokens (dark values, app is dark-only) */
   --background: #020308;
   --foreground: #f4f4f5;
   --card: #0b0c0e;
@@ -42,7 +42,7 @@
   --text-warm: #f4ece6;
   --text-warm-muted: #a79688;
 
-  /* Footer pipeline greys — deliberately dimmer than the text scale. */
+  /* Footer pipeline greys, deliberately dimmer than the text scale. */
   --pipeline-idle: #3a3a40;
   --pipeline-sep: #55565b;
 
@@ -200,7 +200,7 @@
 }
 
 /* Route + layout transitions (see app.pageTransition in nuxt.config). A soft
-   cross-fade with a small vertical shift — mode: out-in, so the old page leaves
+   cross-fade with a small vertical shift, mode: out-in, so the old page leaves
    before the new one enters. */
 .page-enter-active,
 .page-leave-active,

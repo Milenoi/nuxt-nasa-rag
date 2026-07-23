@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// The glowing black-hole sphere from the design — a floating dark orb ringed by
+// The glowing black-hole sphere from the design, a floating dark orb ringed by
 // a soft halo. Used for the "no result" (cool) and "error" (warm) states, and
 // reused on the 404 page (with "404" in the default slot). Decorative.
 const props = withDefaults(

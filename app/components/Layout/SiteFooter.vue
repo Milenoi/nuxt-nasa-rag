@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Fixed, frosted-glass status bar — same treatment as the sibling site's cache
+// Fixed, frosted-glass status bar, same treatment as the sibling site's cache
 // footer, but here it visualises the RAG PIPELINE: Query → Retrieve → Rank →
 // Answer. Each stage's dot lights up as the Ask page moves through the request.
 import type { AskStatus } from '~/composables/useAskStatus'
@@ -33,11 +33,11 @@ const stages = computed(() =>
   }))
 )
 
-// Right-hand timing text: idle label when idle, "— —" while loading, else the
+// Right-hand timing text: idle label when idle, "- -" while loading, else the
 // measured timing.
 const timingText = computed(() => {
   if (status.value === 'idle') return footer.value?.idleLabel ?? 'idle'
-  if (status.value === 'loading') return '— —'
+  if (status.value === 'loading') return '···'
   return timing.value ?? ''
 })
 </script>

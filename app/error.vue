@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Standalone error page — Nuxt renders this OUTSIDE the layout, so the shell
+// Standalone error page, Nuxt renders this OUTSIDE the layout, so the shell
 // (starfield, header, footer) is included here directly. Same dark, spacey look
 // as the app: a black hole with the status code glowing inside it.
 const props = defineProps<{
@@ -59,7 +59,7 @@ const goHome = () => clearError({ redirect: '/' })
 </template>
 
 <style scoped>
-/* Soft glow behind the status code — a decorative effect, kept out of the
+/* Soft glow behind the status code, a decorative effect, kept out of the
    template rather than as an arbitrary utility. */
 .code-glyph {
   text-shadow: 0 0 30px rgba(0, 0, 0, 0.9), 0 0 50px rgba(90, 140, 255, 0.3);

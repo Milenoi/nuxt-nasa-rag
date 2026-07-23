@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // The NASA orbit spinner, ported from the sibling site: a glowing core with two
-// counter-rotating satellites and a few twinkling stars. Reusable and inline —
+// counter-rotating satellites and a few twinkling stars. Reusable and inline,
 // the Ask page drops it in while the RAG pipeline runs. An optional label sits
 // below it (aria-live so screen readers hear the status).
 withDefaults(defineProps<{ label?: string }>(), { label: '' })

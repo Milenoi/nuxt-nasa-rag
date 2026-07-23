@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Floating "back to top" button — ported 1:1 from the sibling site. Appears
+// Floating "back to top" button, ported 1:1 from the sibling site. Appears
 // after scrolling down, hidden on the full-bleed Ask home so it never overlaps
 // the hero.
 import { ArrowUp } from '@lucide/vue'

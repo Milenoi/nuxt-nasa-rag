@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * Animated deep-space background: three twinkling star layers and two drifting
- * comets. Purely decorative — sits behind the page content (fixed, negative
+ * comets. Purely decorative, sits behind the page content (fixed, negative
  * z-index, pointer-events: none) and is hidden from assistive tech.
  *
  * The Taurus constellation lives in its own interactive component
@@ -57,7 +57,7 @@
   inset: 0;
 }
 
-/* Layer 1 — the brightest, densest field */
+/* Layer 1, the brightest, densest field */
 .stars-1 {
   background-image:
     radial-gradient(1.6px 1.6px at 40px 60px, #fff, transparent),
@@ -80,7 +80,7 @@
   animation: twinkle 6s ease-in-out infinite;
 }
 
-/* Layer 2 — mid field, twinkling in counter-phase */
+/* Layer 2, mid field, twinkling in counter-phase */
 .stars-2 {
   background-image:
     radial-gradient(1px 1px at 90px 200px, rgba(200, 215, 255, 0.7), transparent),
@@ -95,7 +95,7 @@
   animation: twinkle2 8s ease-in-out infinite;
 }
 
-/* Layer 3 — faintest distant field, slowest pulse */
+/* Layer 3, faintest distant field, slowest pulse */
 .stars-3 {
   background-image:
     radial-gradient(1px 1px at 140px 90px, rgba(255, 255, 255, 0.5), transparent),

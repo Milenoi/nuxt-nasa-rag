@@ -9,9 +9,9 @@ const hw = computed(() => content.value?.howItWorks)
 const sibling = computed(() => content.value?.sibling)
 
 useSeoMeta({
-  title: 'How it works — APOD Ask',
+  title: 'How it works | APOD Ask',
   description:
-    'How APOD Ask turns a question into a grounded answer: embed, retrieve, rank, generate — retrieval you can actually see.'
+    'How APOD Ask turns a question into a grounded answer: embed, retrieve, rank, generate. Retrieval you can actually see.'
 })
 
 // Node accent per pipeline stage, matching the footer pipeline colours.
@@ -21,7 +21,7 @@ const palette: Record<string, { border: string; text: string }> = {
   green: { border: 'border-accent-green/40', text: 'text-accent-green' }
 }
 
-// Real excerpts from the project, one per step — the actual code doing the work.
+// Real excerpts from the project, one per step, the actual code doing the work.
 const snippets: { file: string; code: string }[] = [
   {
     file: 'server/utils/embed.ts',
@@ -74,7 +74,7 @@ const response = await ai.models.generateContent({
   }
 ]
 
-// A tiny, safe syntax highlighter — enough to read like the sibling site's
+// A tiny, safe syntax highlighter, enough to read like the sibling site's
 // Shiki panels (comments, strings, keywords) without a build pipeline. Works
 // line by line so keywords inside a `// comment` aren't mis-coloured.
 const KEYWORDS = ['const', 'let', 'await', 'return', 'if', 'export', 'function', 'new', 'for']

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// The Taurus constellation — a small easter egg. Its stars can be dragged: grab
+// The Taurus constellation, a small easter egg. Its stars can be dragged: grab
 // any point and the connecting lines follow live. The brightest reddish star,
 // Aldebaran (the bull's eye), carries a personal title tooltip.
 //
@@ -14,7 +14,7 @@ const INITIAL: Star[] = [
   { id: 'a', x: 70, y: 60 }, // left horn tip
   { id: 'b', x: 150, y: 110 },
   { id: 'c', x: 210, y: 170 }, // branches down to the left leg
-  { id: 'ald', x: 250, y: 205 }, // Aldebaran — the eye
+  { id: 'ald', x: 250, y: 205 }, // Aldebaran, the eye
   { id: 'd', x: 300, y: 150 },
   { id: 'e', x: 360, y: 100 },
   { id: 'f', x: 415, y: 66 }, // right horn tip
@@ -34,11 +34,11 @@ const moved = computed(() =>
 )
 
 // Label copy comes from /api/content like everywhere else (even though the whole
-// layer is aria-hidden — keeping copy central stays consistent).
+// layer is aria-hidden, keeping copy central stays consistent).
 const { data: content } = await useFetch('/api/content', { key: 'content' })
 const taurus = computed(() => content.value?.taurus)
 
-// The logo click pulses homeReset — snap every star back to where it started.
+// The logo click pulses homeReset, snap every star back to where it started.
 const { homeReset } = useAskStatus()
 watch(homeReset, () => {
   INITIAL.forEach((origin, i) => {
@@ -124,7 +124,7 @@ function endDrag() {
       <circle cx="90" cy="44" r="1.1" class="taurus-pleiad" />
       <circle cx="74" cy="52" r="0.9" class="taurus-pleiad" />
 
-      <!-- Aldebaran — the glowing reddish eye, draggable, with the easter egg -->
+      <!-- Aldebaran, the glowing reddish eye, draggable, with the easter egg -->
       <g>
         <circle
           :cx="byId('ald').x"
@@ -149,7 +149,7 @@ function endDrag() {
           @pointerup="endDrag"
           @pointercancel="endDrag"
         >
-          <title>Aldebaran — the eye of Taurus. Melanie's birthday is in April, so she is a Taurus.</title>
+          <title>Aldebaran, the eye of Taurus. Melanie's birthday is in April, so she is a Taurus.</title>
         </circle>
       </g>
 

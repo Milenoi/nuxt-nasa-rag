@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Fixed, transparent, blurred-gradient header — ported 1:1 from the sibling
+// Fixed, transparent, blurred-gradient header, ported 1:1 from the sibling
 // caching site so the two feel like one family. Copy comes from /api/content.
 const { data: content } = await useFetch('/api/content', { key: 'content' })
 const { status, timing, homeReset } = useAskStatus()
@@ -10,7 +10,7 @@ const menuOpen = ref(false)
 const header = computed(() => content.value?.header)
 const nav = computed(() => content.value?.nav ?? [])
 
-// Clicking the logo always brings the search field back — a soft reset of the
+// Clicking the logo always brings the search field back, a soft reset of the
 // Ask flow (the page clears its own state when status returns to idle).
 function resetToAsk() {
   status.value = 'idle'
