@@ -84,7 +84,7 @@ export default defineEventHandler(() => {
     howItWorks: {
       tagline: 'Retrieval-Augmented Generation, in plain sight',
       heading: 'How it works',
-      lead: 'Every answer is built in four small steps. There is no black-box vector database. The retrieval is hand-written and fully visible, so you can see exactly how a question turns into a grounded answer.',
+      lead: 'Every answer is built in four small steps, from your question to a grounded reply. You can follow exactly how retrieval-augmented generation turns a question into an answer drawn only from real NASA texts.',
       steps: [
         {
           role: 'Query',
@@ -96,7 +96,7 @@ export default defineEventHandler(() => {
           role: 'Retrieve',
           color: 'cyan',
           name: 'Find the closest texts',
-          desc: 'That question-vector is compared against every stored APOD vector using cosine similarity, roughly twenty lines of hand-written math over a JSON file. The closer two vectors point, the closer their meaning.'
+          desc: 'That question-vector goes to the Upstash Vector database, which compares it against every stored APOD vector by cosine similarity and hands back the closest ones. The closer two vectors point, the closer their meaning.'
         },
         {
           role: 'Rank',
@@ -119,7 +119,7 @@ export default defineEventHandler(() => {
       tagline: 'A learning project',
       heading: 'Understanding RAG by building it by hand',
       lead1: "I'm a frontend developer, curious about how AI actually works under the hood. Instead of reaching for a framework that hides everything, I wanted to build Retrieval-Augmented Generation from the ground up, so I could actually explain what embedding, retrieval and grounded generation each do, in my own words.",
-      lead2: 'So every moving part here is deliberately visible: the embedding step calls a hosted model, the similarity search is a few lines of hand-written math over a JSON file (no black-box vector database), and the language model is told to answer only from the retrieved NASA texts.',
+      lead2: 'So every moving part here is deliberately visible: the embedding step calls a hosted model, the similarity search ranks stored vectors by cosine distance (I first wrote this by hand, then moved it to a hosted vector database), and the language model is told to answer only from the retrieved NASA texts.',
       journey: {
         label: 'How it got here',
         steps: [
@@ -131,7 +131,7 @@ export default defineEventHandler(() => {
           {
             dropped: 'Hand-written cosine over one plain JSON file.',
             reason: 'Lovely to learn on, but it will not scale.',
-            now: 'A real vector database (next up).'
+            now: 'A hosted vector database (Upstash Vector), live now.'
           }
         ]
       },
@@ -139,9 +139,10 @@ export default defineEventHandler(() => {
       techStack: [
         { label: 'Framework', value: 'Nuxt 4 + Vue, Nitro server routes' },
         { label: 'Embeddings', value: 'Google Gemini: gemini-embedding-001 (multilingual, 768-dim)' },
-        { label: 'Vector store', value: 'Plain JSON file + hand-written cosine similarity' },
+        { label: 'Vector store', value: 'Upstash Vector (hand-written cosine kept as plan A)' },
         { label: 'Language model', value: 'Google Gemini: gemini-flash-latest (free tier)' },
         { label: 'Data', value: 'NASA Astronomy Picture of the Day API' },
+        { label: 'Ingest', value: 'Manual backfill script + a daily Netlify function' },
         { label: 'Hosting', value: 'Netlify' }
       ],
       freeTierNote: 'This is deliberately a free-tier demo, so it can hit the daily quota. A hobby project, built to learn and to show, not to run up costs.',

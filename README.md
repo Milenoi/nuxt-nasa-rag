@@ -74,6 +74,12 @@ between them, so an interrupted run (for example on the daily Gemini quota) keep
 everything it finished and simply continues on the next run. Restart `npm run dev`
 afterwards, since the ask route caches the connection.
 
+A daily top-up runs as a **Netlify Scheduled Function**
+(`netlify/functions/daily-ingest.mts`): it fetches just the newest APOD day and
+upserts it, sharing the embed + mapping logic (`server/utils/apodVector.ts`) with
+the backfill script. Its cron schedule is currently commented out; enable it once
+the historical backfill is complete.
+
 ## Environment variables
 
 Copy the values into a `.env` (gitignored, never commit these; they are only ever

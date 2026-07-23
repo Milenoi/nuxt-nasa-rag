@@ -34,26 +34,23 @@ const snippets: { file: string; code: string }[] = [
 return normalize(response.embeddings[0].values)`
   },
   {
-    file: 'server/utils/search.ts',
-    code: `// Vectors are already normalized, so cosine similarity
-// is just the dot product: multiply pairwise, sum up.
-export function cosineSimilarity(a: number[], b: number[]): number {
-  let sum = 0
-  for (let i = 0; i < a.length; i++) sum += a[i] * b[i]
-  return sum
-}`
+    file: 'server/api/ask.post.ts',
+    code: `// The question vector goes to the Upstash Vector index,
+// which returns the closest APOD vectors by cosine similarity.
+const matches = await index.query({
+  vector: questionVector,
+  topK: 5,
+  includeMetadata: true
+})`
   },
   {
     file: 'server/api/ask.post.ts',
-    code: `const ranked = shelf.map((r) => ({
-  ...r,
-  score: cosineSimilarity(questionVector, r.vector)
-}))
-ranked.sort((a, b) => b.score - a.score)
-const top = ranked.slice(0, 5)
+    code: `// Keep only sources at or above the relevance cutoff
+// (the slider sends this; default 0.55).
+const strong = top.filter((r) => r.score >= threshold)
 
-// Too weak? Say so instead of guessing.
-if (top[0].score < RELEVANCE_THRESHOLD) {
+// Nothing strong enough? Say so instead of guessing.
+if (strong.length === 0) {
   return { answer: "I couldn't find anything…", sources: [] }
 }`
   },
