@@ -40,6 +40,20 @@ const timingText = computed(() => {
   if (status.value === 'loading') return '···'
   return timing.value ?? ''
 })
+
+// Mobile shows a single plain-language status + dot instead of the four stages,
+// so the footer never overflows a narrow screen.
+const mobileStatusColor: Record<AskStatus, string> = {
+  idle: FAINT,
+  loading: CYAN,
+  answer: GREEN,
+  empty: RED,
+  error: WARM
+}
+const mobileStatus = computed(() => ({
+  label: footer.value?.status?.[status.value] ?? status.value,
+  color: mobileStatusColor[status.value] ?? FAINT
+}))
 </script>
 
 <template>
@@ -49,8 +63,17 @@ const timingText = computed(() => {
     <div
       class="container mx-auto flex h-[52px] items-center justify-between gap-4 px-5 md:px-8"
     >
-      <!-- Left: the RAG pipeline with live per-stage dots -->
-      <div class="flex items-center gap-2.5 font-mono text-xs text-text-muted">
+      <!-- Mobile: a single plain-language status instead of the full pipeline. -->
+      <div class="flex items-center gap-2 font-mono text-xs text-text-muted sm:hidden">
+        <span
+          class="size-[7px] rounded-full transition-colors"
+          :style="{ background: mobileStatus.color, boxShadow: `0 0 8px 1px ${mobileStatus.color}55` }"
+        />
+        {{ mobileStatus.label }}
+      </div>
+
+      <!-- Left: the RAG pipeline with live per-stage dots (sm and up) -->
+      <div class="hidden items-center gap-2.5 font-mono text-xs text-text-muted sm:flex">
         <template
           v-for="(stage, i) in stages"
           :key="stage.label"
@@ -65,7 +88,7 @@ const timingText = computed(() => {
               class="size-[7px] rounded-full transition-colors"
               :style="{ background: stage.color, boxShadow: `0 0 8px 1px ${stage.color}55` }"
             />
-            {{ stage.label }}
+            <span class="hidden sm:inline">{{ stage.label }}</span>
           </span>
         </template>
         <span class="ml-1 text-pipeline-sep">· {{ timingText }}</span>

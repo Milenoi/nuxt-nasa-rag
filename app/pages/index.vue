@@ -10,6 +10,7 @@ import { marked } from 'marked'
 import Autoplay from 'embla-carousel-autoplay'
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel'
 import { Slider } from '@/components/ui/slider'
+import { ChevronDown } from '@lucide/vue'
 
 type Source = {
   date: string
@@ -68,6 +69,8 @@ const autoplayPlugins = [
 const errorDetail = ref('')
 // Gentle nudge when someone hits Ask with an empty field.
 const askHint = ref('')
+// Example prompts start collapsed behind a toggle so the idle screen stays calm.
+const showExamples = ref(false)
 // Best similarity on an empty result, below the cutoff the query clearly has
 // nothing to do with space, which earns a playful roast instead of the neutral
 // "nothing found" copy.
@@ -98,6 +101,11 @@ const thresholdModel = computed({
 })
 // Only worth re-asking once the slider moved off the value we last searched with.
 const thresholdChanged = computed(() => Math.abs(threshold.value - lastAskedThreshold.value) > 0.001)
+// True once the slider filters out every source: the shown answer + hero no longer
+// reflect a valid result, so we mask them with a tolerance-empty state.
+const allBelowThreshold = computed(() =>
+  status.value === 'answer' && sources.value.length > 0 && sources.value.every((s) => s.score < threshold.value)
+)
 
 // Announced to assistive tech + used to move focus when a state change happens,
 // so the result isn't silent once the loader is removed from the DOM.
@@ -354,7 +362,7 @@ function hideBrokenImage(event: Event) {
     <!-- ═══════════ IDLE, the hero + ask box ═══════════ -->
     <section
       v-if="status === 'idle'"
-      class="mx-auto max-w-[820px] px-5 pb-16 pt-[128px] animate-fade-up md:px-8"
+      class="mx-auto flex min-h-[calc(100dvh-3.25rem)] max-w-[820px] flex-col px-5 pb-16 pt-[19vh] animate-fade-up md:px-8"
     >
       <p class="mb-6 text-sm text-text-faint">
         {{ hero?.eyebrow }}
@@ -370,16 +378,16 @@ function hideBrokenImage(event: Event) {
         class="mt-10 max-w-[680px]"
         @submit.prevent="submit"
       >
-        <div class="flex items-center gap-2.5 rounded-xl border border-input bg-card/85 py-2 pl-6 pr-2 backdrop-blur-[6px]">
+        <div class="flex flex-col gap-2 rounded-xl border border-input bg-card/85 p-2 backdrop-blur-[6px] sm:flex-row sm:items-center sm:gap-2.5 sm:py-2 sm:pl-6 sm:pr-2">
           <input
             v-model="query"
             :placeholder="ask?.placeholder"
             :aria-label="ask?.inputLabel"
-            class="min-w-0 flex-1 border-none bg-transparent py-3 text-lg text-text-strong outline-none placeholder:text-text-faint"
+            class="min-w-0 flex-1 border-none bg-transparent px-4 py-3 text-lg text-text-strong outline-none placeholder:text-text-faint sm:px-0"
           >
           <button
             type="submit"
-            class="btn-glass inline-flex flex-shrink-0 items-center gap-2 rounded-lg px-6 py-3.5 text-base font-medium text-foreground backdrop-blur-[10px]"
+            class="btn-glass inline-flex w-full flex-shrink-0 items-center justify-center gap-2 rounded-lg px-6 py-3.5 text-base font-medium text-foreground backdrop-blur-[10px] sm:w-auto"
           >
             {{ ask?.submit }} <span
               aria-hidden="true"
@@ -416,7 +424,25 @@ function hideBrokenImage(event: Event) {
         </div>
       </div>
 
-      <div class="mt-6 flex flex-wrap gap-2.5">
+      <!-- Toggle + examples in normal flow. The section is top-anchored (pt-[19vh]),
+           so opening the list grows the page downward without shifting the content
+           up (no jump), and the page scrolls when space runs out. -->
+      <button
+        type="button"
+        class="mt-6 inline-flex w-fit items-center gap-1.5 text-sm text-text-faint transition-colors hover:text-text-secondary"
+        :aria-expanded="showExamples"
+        @click="showExamples = !showExamples"
+      >
+        {{ ask?.examplesToggle }}
+        <ChevronDown
+          class="size-4 transition-transform"
+          :class="showExamples ? 'rotate-180' : ''"
+        />
+      </button>
+      <div
+        v-if="showExamples"
+        class="mt-4 flex flex-wrap gap-2.5 animate-fade-up"
+      >
         <button
           v-for="example in ask?.examples"
           :key="example"
@@ -464,6 +490,21 @@ function hideBrokenImage(event: Event) {
           >
         </Transition>
         <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(2,3,8,0.35)_0%,transparent_26%,rgba(2,3,8,0.55)_66%,#020308_100%)]" />
+
+        <!-- Tolerance-empty mask: when the slider filters every source out, the
+             hero image no longer reflects a real match, so cover it. -->
+        <div
+          v-if="allBelowThreshold"
+          class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-5 bg-space-deep/85 px-6 text-center backdrop-blur-[2px]"
+        >
+          <BlackHole
+            variant="cool"
+            :size="150"
+          />
+          <p class="max-w-[320px] text-sm text-text-secondary">
+            {{ answerCopy?.toleranceEmpty }}
+          </p>
+        </div>
 
         <!-- New search, aligned to the content container -->
         <div class="absolute inset-x-0 top-[88px] z-20">
@@ -527,9 +568,17 @@ function hideBrokenImage(event: Event) {
               {{ answerCopy?.heading }}
             </h3>
           </div>
+          <!-- When the slider filters every source out, the earlier answer no
+               longer applies, so show a tolerance-empty note in its place. -->
+          <p
+            v-if="allBelowThreshold"
+            class="answer-prose text-text-secondary"
+          >
+            {{ answerCopy?.toleranceEmpty }}
+          </p>
           <!-- Rendered from our own grounded LLM output, not user input. -->
           <!-- eslint-disable-next-line vue/no-v-html -->
-          <div class="answer-prose" v-html="answerHtml" />
+          <div v-else class="answer-prose" v-html="answerHtml" />
         </section>
 
         <!-- Sources -->

@@ -18,18 +18,27 @@ export default defineEventHandler(() => {
     footer: {
       stages: ['Query', 'Retrieve', 'Rank', 'Answer'],
       idleLabel: 'idle',
-      meta: 'embeddings · retrieval · NASA APOD'
+      meta: 'embeddings · retrieval · NASA APOD',
+      // Plain-language status shown on mobile instead of the full pipeline.
+      status: {
+        idle: 'idle',
+        loading: 'Searching…',
+        answer: 'Answer ready',
+        empty: 'No matches',
+        error: 'Signal lost'
+      }
     },
     hero: {
-      eyebrow: "Natural-language search across NASA's APOD.",
+      eyebrow: 'Natural-language APOD search.',
       title: 'Ask the Stars',
       subtitle:
-        'Ask anything about astronomy. Answers come from real NASA Astronomy Picture of the Day descriptions, with the source images.'
+        'Ask anything about astronomy. Answers from real NASA APOD texts, with their images.'
     },
     ask: {
-      placeholder: "e.g. What is the Cat's Eye Nebula?",
+      placeholder: 'e.g. How do stars form?',
       inputLabel: 'Your astronomy question',
       submit: 'Ask',
+      examplesToggle: 'Need inspiration?',
       emptyHint: 'Come on, space may be empty, but you still have to ask something.',
       examples: [
         'What is a planetary nebula?',
@@ -54,7 +63,8 @@ export default defineEventHandler(() => {
       showInHero: 'Show {title} in the hero',
       tolerance: 'Relevance',
       toleranceHint: 'Sources below the line are left out. Ask again to apply.',
-      askAgain: 'Ask again at this tolerance'
+      askAgain: 'Ask again at this tolerance',
+      toleranceEmpty: 'No source clears this relevance. Ease the slider back down, or ask again.'
     },
     a11y: {
       answerReady: 'Answer ready.',

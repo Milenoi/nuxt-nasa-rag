@@ -91,7 +91,7 @@ function endDrag() {
 
 <template>
   <div
-    class="pointer-events-none fixed right-[70px] top-[96px] z-40 hidden h-[320px] w-[440px] overflow-hidden opacity-60 [animation:drift_14s_ease-in-out_infinite] md:block"
+    class="pointer-events-none fixed left-1/2 top-[56px] z-0 h-[220px] w-[300px] -translate-x-1/2 overflow-hidden opacity-40 [animation:drift_14s_ease-in-out_infinite] sm:left-auto sm:right-[70px] sm:top-[96px] sm:h-[320px] sm:w-[440px] sm:translate-x-0 sm:opacity-50 2xl:z-40 2xl:opacity-60"
     aria-hidden="true"
   >
     <svg
