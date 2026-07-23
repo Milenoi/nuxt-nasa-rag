@@ -12,11 +12,11 @@ export default defineNuxtConfig({
   css: ['~/assets/css/tailwind.css'],
 
   runtimeConfig: {
-    // Server-only secrets — never sent to the browser.
+    // Server-only secrets, never sent to the browser.
     nasaApiKey: process.env.NASA_API_KEY || '',
     geminiApiKey: process.env.GEMINI_API_KEY || '',
     public: {
-      // Exposed to the browser — must contain NO secrets.
+      // Exposed to the browser, must contain NO secrets.
       nasaApodApiUrl: process.env.NUXT_NASA_APOD_API_URL || ''
     }
   },
@@ -28,11 +28,11 @@ export default defineNuxtConfig({
   },
 
   // @nuxt/image: dev uses IPX, production uses the Netlify Image CDN (see
-  // getImageConfig) — keeps sharp/IPX out of the serverless function.
+  // getImageConfig), keeps sharp/IPX out of the serverless function.
   image: imageConfig,
 
   // Fonts are referenced via CSS custom properties (var(--font-sans) …), which
-  // @nuxt/fonts cannot always detect through the indirection — list them
+  // @nuxt/fonts cannot always detect through the indirection, list them
   // explicitly so they are reliably self-hosted and preloaded.
   fonts: {
     families: [
@@ -42,7 +42,7 @@ export default defineNuxtConfig({
     ]
   },
 
-  // The two content pages are fully static — prerender them to plain HTML so
+  // The two content pages are fully static, prerender them to plain HTML so
   // they never hit a serverless function. The Ask page stays dynamic (SSR).
   routeRules: {
     '/about': { prerender: true },
@@ -61,12 +61,12 @@ export default defineNuxtConfig({
       htmlAttrs: { lang: 'en' },
       // Site-wide SEO defaults; per-page useSeoMeta() overrides title/description.
       title: 'APOD Ask',
-      titleTemplate: (title?: string) => (title ? title : 'APOD Ask — ask the stars'),
+      titleTemplate: '%s',
       meta: [
         {
           name: 'description',
           content:
-            "Natural-language search across NASA's Astronomy Picture of the Day — answers grounded in real APOD descriptions, with the source images."
+            "Natural-language search across NASA's Astronomy Picture of the Day, answers grounded in real APOD descriptions, with the source images."
         },
         { property: 'og:title', content: 'APOD Ask' },
         {
