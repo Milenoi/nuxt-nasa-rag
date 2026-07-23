@@ -32,7 +32,7 @@ export default defineEventHandler(() => {
       eyebrow: 'Natural-language APOD search.',
       title: 'Ask the Stars',
       subtitle:
-        'Ask anything about astronomy. Answers from real NASA APOD texts, with their images.'
+        'Ask anything about astronomy. Answers from real NASA APOD texts, with their images and videos.'
     },
     ask: {
       placeholder: 'e.g. How do stars form?',

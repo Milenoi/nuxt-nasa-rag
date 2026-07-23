@@ -27,6 +27,8 @@ export default defineEventHandler(async (event) => {
         title: record.title,
         imageUrl: record.imageUrl,
         explanation: record.explanation,
+        mediaType: record.mediaType,
+        thumbnailUrl: record.thumbnailUrl,
         score: cosineSimilarity(questionVector, record.vector)
     }))
 

@@ -7,4 +7,8 @@ export type ApodRecord = {
   imageUrl: string
   explanation: string
   vector: number[]
+  // 'image' or 'video'. APOD video days embed YouTube/Vimeo; for those, imageUrl
+  // holds the embed URL and thumbnailUrl (from &thumbs=true) the preview still.
+  mediaType: 'image' | 'video'
+  thumbnailUrl?: string
 }

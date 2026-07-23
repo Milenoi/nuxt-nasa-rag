@@ -34,7 +34,7 @@ async function embedWithRetry(text: string, attempt = 1): Promise<number[]> {
 
 // Fetch one date-range window, retrying a few times on transient errors.
 async function fetchRange(startIso: string, endIso: string, attempt = 1) {
-    const url = `${NASA_APOD_API_URL}?api_key=${NASA_API_KEY}&start_date=${startIso}&end_date=${endIso}`
+    const url = `${NASA_APOD_API_URL}?api_key=${NASA_API_KEY}&start_date=${startIso}&end_date=${endIso}&thumbs=true`
     const response = await fetch(url)
 
     if (!response.ok) {
@@ -76,13 +76,13 @@ async function main() {
     }
 
     // 2. Keep only image entries that actually have an explanation text.
-    const images = entries.filter((e) => e.media_type === 'image' && e.explanation)
-    console.log(`Got ${images.length} usable images from ${entries.length} entries. Embedding...`)
+   const usable = entries.filter((e) => (e.media_type === 'image' || e.media_type === 'video') && e.explanation)
+    console.log(`Got ${usable.length} usable images from ${entries.length} entries. Embedding...`)
 
     // 3. Embed each explanation and build our records.
     const records: ApodRecord[] = []
-    for (let i = 0; i < images.length; i++) {
-        const entry = images[i]
+    for (let i = 0; i < usable.length; i++) {
+        const entry = usable[i]
         const vector = await embedWithRetry(entry.explanation)
         await sleep(120) // gentle pacing so we stay under the per-minute limit
         records.push({
@@ -90,9 +90,11 @@ async function main() {
             title: entry.title,
             imageUrl: entry.url,
             explanation: entry.explanation,
+            mediaType: entry.media_type,
+            thumbnailUrl: entry.thumbnail_url,
             vector
         })
-        console.log(`  ${i + 1}/${images.length}: ${entry.title}`)
+        console.log(`  ${i + 1}/${usable.length}: ${entry.title}`)
     }
 
     // 4. Write the filled shelf to disk.

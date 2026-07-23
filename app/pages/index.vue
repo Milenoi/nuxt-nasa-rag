@@ -10,7 +10,7 @@ import { marked } from 'marked'
 import Autoplay from 'embla-carousel-autoplay'
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel'
 import { Slider } from '@/components/ui/slider'
-import { ChevronDown } from '@lucide/vue'
+import { ChevronDown, Play } from '@lucide/vue'
 
 type Source = {
   date: string
@@ -18,6 +18,8 @@ type Source = {
   imageUrl: string
   explanation: string
   score: number
+  mediaType?: 'image' | 'video'
+  thumbnailUrl?: string
 }
 type AskResponse = {
   question: string
@@ -346,6 +348,19 @@ function cardGradient(i: number) {
 function hideBrokenImage(event: Event) {
   ;(event.target as HTMLElement).style.display = 'none'
 }
+
+// APOD videos come in two shapes: a direct .mp4 hosted by NASA, or a YouTube
+// embed URL. We autoplay them muted + looping in the hero.
+const isVideo = (src?: Source) => src?.mediaType === 'video'
+const isFileVideo = (url?: string) => /\.(mp4|webm|ogg)(\?|$)/i.test(url ?? '')
+// Build an autoplaying, muted, looping YouTube embed (loop needs playlist=<id>).
+function youtubeAutoplaySrc(url: string): string {
+  const id = url.match(/embed\/([^?&/]+)/)?.[1]
+  if (!id) return url
+  return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&playsinline=1&loop=1&playlist=${id}&controls=0&rel=0`
+}
+// Card preview: video thumbnail if we have one, else fall through to the gradient.
+const cardImage = (src: Source) => (isVideo(src) ? src.thumbnailUrl : src.imageUrl)
 </script>
 
 <template>
@@ -480,8 +495,29 @@ function hideBrokenImage(event: Event) {
           :style="{ background: cardGradient(heroIndex) }"
         />
         <Transition name="hero-swap">
+          <!-- Direct NASA .mp4: native autoplay, muted, looping. -->
+          <video
+            v-if="isVideo(heroSource) && isFileVideo(heroSource?.imageUrl)"
+            :key="heroIndex"
+            :src="heroSource!.imageUrl"
+            autoplay
+            muted
+            loop
+            playsinline
+            class="absolute inset-0 h-full w-full object-cover"
+          />
+          <!-- YouTube embed: autoplaying muted iframe. -->
+          <iframe
+            v-else-if="isVideo(heroSource)"
+            :key="heroIndex"
+            :src="youtubeAutoplaySrc(heroSource!.imageUrl)"
+            title=""
+            allow="autoplay; encrypted-media; picture-in-picture"
+            class="absolute inset-0 h-full w-full"
+          />
+          <!-- Still image. -->
           <img
-            v-if="heroSource?.imageUrl"
+            v-else-if="heroSource?.imageUrl"
             :key="heroIndex"
             :src="heroSource.imageUrl"
             :alt="heroSource.title"
@@ -683,13 +719,22 @@ function hideBrokenImage(event: Event) {
                       :style="{ background: cardGradient(item.index) }"
                     >
                       <img
-                        v-if="item.src.imageUrl"
-                        :src="item.src.imageUrl"
+                        v-if="cardImage(item.src)"
+                        :src="cardImage(item.src)"
                         :alt="item.src.title"
                         loading="lazy"
                         class="absolute inset-0 h-full w-full object-cover"
                         @error="hideBrokenImage"
                       >
+                      <!-- Play badge marks a video source (mp4s often have no thumb). -->
+                      <div
+                        v-if="isVideo(item.src)"
+                        class="absolute inset-0 grid place-items-center"
+                      >
+                        <span class="grid size-10 place-items-center rounded-full border border-white/25 bg-black/45 backdrop-blur-sm">
+                          <Play class="size-4 fill-white text-white" />
+                        </span>
+                      </div>
                     </div>
                     <div class="px-4 pt-3.5">
                       <div class="font-mono text-xs text-text-faint">
