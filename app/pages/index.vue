@@ -363,7 +363,7 @@ function selectSource(index: number) {
     <!-- ═══════════ IDLE, the hero + ask box ═══════════ -->
     <section
       v-if="status === 'idle'"
-      class="mx-auto flex min-h-[calc(100dvh-3.25rem)] max-w-[820px] flex-col px-5 pb-16 pt-[12vh] animate-fade-up md:px-8 md:pt-[19vh]"
+      class="mx-auto flex min-h-[calc(100dvh-3.25rem)] max-w-[820px] flex-col px-5 pb-16 pt-24 animate-fade-up md:px-8 md:pt-[19vh]"
     >
       <p class="mb-6 text-sm text-text-faint">
         {{ hero?.eyebrow }}
@@ -462,7 +462,7 @@ function selectSource(index: number) {
     <!-- ═══════════ LOADING, the orbit spinner ═══════════ -->
     <div
       v-else-if="status === 'loading'"
-      class="animate-fade-up flex min-h-dvh items-center justify-center px-5"
+      class="animate-fade-up flex min-h-[calc(100dvh-3.25rem)] items-center justify-center px-5"
     >
       <OrbitLoader :label="ask?.loading" />
     </div>
@@ -765,7 +765,7 @@ function selectSource(index: number) {
     <!-- ═══════════ EMPTY, nothing crossed the event horizon ═══════════ -->
     <section
       v-else-if="status === 'empty'"
-      class="flex min-h-dvh flex-col items-center justify-center px-5 py-24 text-center animate-fade-up"
+      class="flex min-h-[calc(100dvh-3.25rem)] flex-col items-center justify-center px-5 py-24 text-center animate-fade-up"
     >
       <BlackHole
         variant="cool"
@@ -793,7 +793,7 @@ function selectSource(index: number) {
     <!-- ═══════════ ERROR, the signal fell into a black hole ═══════════ -->
     <section
       v-else-if="status === 'error'"
-      class="flex min-h-dvh flex-col items-center justify-center px-5 py-24 text-center animate-fade-up"
+      class="flex min-h-[calc(100dvh-3.25rem)] flex-col items-center justify-center px-5 py-24 text-center animate-fade-up"
     >
       <BlackHole
         variant="warm"
