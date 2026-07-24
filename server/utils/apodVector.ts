@@ -27,6 +27,9 @@ export function isUsableApod(entry: ApodEntry): boolean {
 // (ingest writes it, ask.post types the query result with it) so they can't
 // drift apart.
 export interface ApodMetadata {
+    // Index signature so this satisfies Upstash's `Dict` metadata constraint on
+    // upsert + query; the concrete fields below stay typed.
+    [key: string]: unknown
     date: string
     title: string
     imageUrl: string
