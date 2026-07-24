@@ -4,32 +4,33 @@
 // (random input like "aqqwqqq" often scores high).
 const NONSENSE_CUTOFF = 0.48
 
+// Map an upstream Gemini/Upstash failure to a client error carrying its real
+// status (429 quota, 403 forbidden, ...), so describeError can name the cause
+// instead of a generic 500 that reads as a connection drop.
+function upstreamError(err: unknown) {
+    const e = err as { status?: number; code?: number; statusCode?: number; message?: string }
+    const fromMsg = Number(/\b(4\d\d|5\d\d)\b/.exec(e?.message ?? '')?.[1])
+    const status = e?.status ?? e?.code ?? e?.statusCode ?? (fromMsg || 502)
+    const code = status >= 400 && status < 600 ? status : 502
+    return createError({ statusCode: code, statusMessage: `Answer service failed (${code})` })
+}
+
 // Thin controller: embed the question, retrieve sources, decide the state.
 export default defineEventHandler(async (event) => {
     const body = await readBody(event)
     const question = body?.question
     if (!question) throw createError({ statusCode: 400, statusMessage: 'Missing question' })
 
-    const { sources, topScore } = await retrieveSources(question)
+    // Embedding + retrieval; surface upstream failures (e.g. 403 bad key) cleanly.
+    const { sources, topScore } = await retrieveSources(question).catch((e) => { throw upstreamError(e) })
 
     // Nothing in the archive comes close: don't spend a Gemini call on it.
     if (topScore < NONSENSE_CUTOFF) {
         return { question, answer: '', sources: [], topScore, state: 'nonsense' as const }
     }
 
-    let raw: string
-    try {
-        raw = await generateAnswer(question, sources)
-    } catch (err) {
-        // Pass Gemini's real status through (esp. 429 quota) so the client can name
-        // the cause, instead of a generic 500 that reads as a connection problem.
-        const e = err as { status?: number; code?: number; message?: string }
-        const is429 = e?.status === 429 || e?.code === 429 || /\b429\b/.test(e?.message ?? '')
-        throw createError({
-            statusCode: is429 ? 429 : 502,
-            statusMessage: is429 ? 'Gemini quota exceeded' : 'Answer generation failed'
-        })
-    }
+    // Generation; same clean error handling as retrieval.
+    const raw = await generateAnswer(question, sources).catch((e) => { throw upstreamError(e) })
 
     const trimmed = raw.trimStart()
 
