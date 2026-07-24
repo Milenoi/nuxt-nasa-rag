@@ -11,7 +11,7 @@ import Autoplay from 'embla-carousel-autoplay'
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel'
 import { Slider } from '@/components/ui/slider'
 import { ChevronDown, Play } from '@lucide/vue'
-import type { Source, AskResponse } from '~/types/ask'
+import type { Source } from '~/types/ask'
 
 const { data: content } = await useFetch('/api/content', { key: 'content' })
 const { status, timing } = useAskStatus()
@@ -155,30 +155,59 @@ async function submit() {
   status.value = 'loading'
   timing.value = null
   heroIndex.value = 0
+  answer.value = ''
   const started = performance.now()
   try {
-    const res = await $fetch<AskResponse>('/api/ask', {
+    const res = await fetch('/api/ask', {
       method: 'POST',
-      body: { question: q, threshold: threshold.value }
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ question: q, threshold: threshold.value })
     })
     if (id !== requestId) return
-    timing.value = `${((performance.now() - started) / 1000).toFixed(2)} s`
-    queryEcho.value = res.question
-    // Remember what tolerance this answer was fetched with, so the "ask again"
-    // button only appears once the slider actually moves away from it.
-    lastAskedThreshold.value = threshold.value
-    if (!res.sources?.length) {
-      answer.value = ''
-      sources.value = []
-      emptyOffTopic.value = res.offTopic ?? false
-      status.value = 'empty'
-      announce(a11y.value?.noResults ?? '', emptyHeading)
-    } else {
-      answer.value = res.answer
-      sources.value = res.sources
-      status.value = 'answer'
-      announce(a11y.value?.answerReady ?? '', answerHeading)
+    if (!res.ok || !res.body) {
+      const e = new Error(`Request failed (${res.status})`) as Error & { statusCode?: number }
+      e.statusCode = res.status
+      throw e
     }
+    lastAskedThreshold.value = threshold.value
+
+    // Read the NDJSON stream: meta (sources) first, then the answer token by token.
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buf = ''
+    let streaming = false
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) break
+      if (id !== requestId) return
+      buf += decoder.decode(value, { stream: true })
+      const lines = buf.split('\n')
+      buf = lines.pop() ?? ''
+      for (const raw of lines) {
+        if (!raw.trim()) continue
+        const msg = JSON.parse(raw) as { type: string; question?: string; sources?: Source[]; text?: string; message?: string }
+        if (msg.type === 'meta') {
+          queryEcho.value = msg.question ?? q
+          sources.value = msg.sources ?? []
+        } else if (msg.type === 'empty' || msg.type === 'offtopic') {
+          answer.value = ''
+          sources.value = []
+          emptyOffTopic.value = msg.type === 'offtopic'
+          status.value = 'empty'
+          announce(a11y.value?.noResults ?? '', emptyHeading)
+        } else if (msg.type === 'delta') {
+          if (!streaming) {
+            streaming = true
+            status.value = 'answer'
+            announce(a11y.value?.answerReady ?? '', answerHeading)
+          }
+          answer.value += msg.text ?? ''
+        } else if (msg.type === 'error') {
+          throw new Error(msg.message ?? 'stream error')
+        }
+      }
+    }
+    timing.value = `${((performance.now() - started) / 1000).toFixed(2)} s`
   } catch (err) {
     if (id !== requestId) return
     timing.value = null
