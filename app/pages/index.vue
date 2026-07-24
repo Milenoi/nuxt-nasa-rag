@@ -57,14 +57,11 @@ const errorDetail = ref('')
 const askHint = ref('')
 // Example prompts start collapsed behind a toggle so the idle screen stays calm.
 const showExamples = ref(false)
-// Best similarity on an empty result, below the cutoff the query clearly has
-// nothing to do with space, which earns a playful roast instead of the neutral
-// "nothing found" copy.
-const emptyScore = ref(1)
-const NONSENSE_CUTOFF = 0.5
-const isNonsense = computed(() => emptyScore.value < NONSENSE_CUTOFF)
+// True when the model replied it can't answer from the sources (off-topic /
+// nonsense), which earns the playful roast instead of the neutral copy.
+const emptyOffTopic = ref(false)
 const emptyMessage = computed(() =>
-  isNonsense.value
+  emptyOffTopic.value
     ? states.value?.nonsense ?? ''
     : `${states.value?.empty ?? ''} ${states.value?.emptyHintSuffix ?? ''}`.trim()
 )
@@ -136,12 +133,11 @@ function announce(message: string, target: { value: HTMLElement | null }) {
 // allowed to write the result, a slower earlier response is discarded.
 let requestId = 0
 
-// Build the shareable URL query from the current state, omitting defaults so the
-// URL stays clean (no ?hero=0, no ?t=0.55).
+// Build the shareable URL query. `t` (the tolerance) is always included so the
+// link is explicit about it; `hero` is omitted at 0 (the top match).
 function shareQuery(q: string, hero: number, tol: number): Record<string, string> {
-  const query: Record<string, string> = { q }
+  const query: Record<string, string> = { q, t: tol.toFixed(2) }
   if (hero > 0) query.hero = String(hero)
-  if (Math.abs(tol - DEFAULT_THRESHOLD) > 0.001) query.t = tol.toFixed(2)
   return query
 }
 
@@ -174,7 +170,7 @@ async function submit() {
     if (!res.sources?.length) {
       answer.value = ''
       sources.value = []
-      emptyScore.value = res.topScore ?? 1
+      emptyOffTopic.value = res.offTopic ?? false
       status.value = 'empty'
       announce(a11y.value?.noResults ?? '', emptyHeading)
     } else {
@@ -204,7 +200,7 @@ function clearLocal() {
   queryEcho.value = ''
   heroIndex.value = 0
   errorDetail.value = ''
-  emptyScore.value = 1
+  emptyOffTopic.value = false
   liveMessage.value = ''
 }
 
@@ -222,6 +218,17 @@ watch(status, (value) => {
     // Drop the ?q= param so a reset also gives a clean, shareable idle URL.
     if (route.query.q) router.replace({ query: {} })
   }
+})
+
+// Keep the tolerance live in the URL as the slider moves (debounced, so it isn't
+// replaced on every pixel). Carries the question + hero when there's a result.
+let tUrlTimer: ReturnType<typeof setTimeout> | undefined
+watch(threshold, (t) => {
+  clearTimeout(tUrlTimer)
+  tUrlTimer = setTimeout(() => {
+    const q = typeof route.query.q === 'string' ? route.query.q : ''
+    router.replace({ query: q ? shareQuery(q, heroIndex.value, t) : { t: t.toFixed(2) } })
+  }, 250)
 })
 
 // `status` is shared state that outlives this page, but the answer/sources data

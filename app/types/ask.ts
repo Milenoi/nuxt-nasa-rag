@@ -18,4 +18,6 @@ export type AskResponse = {
   sources: Source[]
   topScore?: number
   threshold?: number
+  // The model couldn't answer from the sources (off-topic / nonsense question).
+  offTopic?: boolean
 }

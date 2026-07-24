@@ -3,9 +3,9 @@ import { Index } from '@upstash/vector'
 import type { ApodMetadata } from './apodVector'
 
 // The RAG use case, kept out of the route handler. Plan A ranked a JSON shelf
-// with hand-written cosine (see search.ts); it now runs on Upstash Vector.
+// with handwritten cosine (see search.ts); it now runs on Upstash Vector.
 export async function answerQuestion(question: string, threshold: number) {
-    // 1. Embed the question (same model as the ingest).
+    // 1. Embed the question (same model as to ingest).
     const questionVector = await embed(question)
 
     // 2. Retrieve the closest sources; Upstash ranks them by cosine similarity.
@@ -41,7 +41,7 @@ export async function answerQuestion(question: string, threshold: number) {
 
     // 4. Grounded generation: answer only from the retrieved texts.
     const context = strong.map((record) => `${record.title} (${record.date})\n${record.explanation}`).join('\n\n')
-    const prompt = `You are an astronomy assistant. Answer the user's question using ONLY the APOD descriptions below. If the answer isn't in them, say you don't know instead of guessing. Keep it concise and mention which picture(s) you used. Answer in the same language as the user's question.
+    const prompt = `You are an astronomy assistant. Answer the user's question using ONLY the APOD descriptions below. If they do not contain the answer, reply with exactly NO_MATCH and nothing else. Otherwise keep it concise and mention which picture(s) you used. Answer in the same language as the user's question.
 
 APOD descriptions:
 ${context}
@@ -54,5 +54,13 @@ Question: ${question}`
         contents: prompt
     })
 
-    return { answer: response.text, sources: top, topScore: top[0]?.score ?? 0 }
+    // NO_MATCH sentinel: the sources don't cover the question (off-topic or
+    // nonsense). Treat it as empty so the UI shows the empty state + roast rather
+    // than a mismatched hero with an "I don't know" answer.
+    const answer = (response.text ?? '').trim()
+    if (/^NO_MATCH/i.test(answer)) {
+        return { answer: '', sources: [], topScore: top[0]?.score ?? 0, offTopic: true }
+    }
+
+    return { answer, sources: top, topScore: top[0]?.score ?? 0 }
 }
