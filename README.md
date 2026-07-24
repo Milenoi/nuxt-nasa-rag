@@ -16,8 +16,15 @@ learning project, and a sibling to my
    Gemini write an answer grounded only in those texts.
 
 Because the answer can only draw from the retrieved descriptions, it does not make
-things up, and the pictures it used are shown as sources. A relevance slider lets
-you set how strict the match has to be.
+things up. If the texts don't cover an otherwise real question, it shows the closest
+pictures instead of guessing; if the input is just gibberish, it says so and stops.
+The pictures behind an answer are always shown as sources. The little remarks along
+the way (a tease for gibberish, a nod for a good question) are written by the model
+itself, in a light Star Trek voice and the language you asked in.
+
+The **relevance slider** is purely visual: it dims the weaker sources so the strong
+ones stand out, and it updates live. It does **not** change the answer or decide
+what counts as a match, that stays server-side.
 
 ## Tech
 

@@ -44,21 +44,19 @@ const matches = await index.query({
 })`
   },
   {
-    file: 'server/utils/answerQuestion.ts',
-    code: `// Keep only sources at or above the relevance cutoff
-// (the slider sends this; default 0.55).
-const strong = top.filter((r) => r.score >= threshold)
-
-// Nothing strong enough? Say so instead of guessing.
-if (strong.length === 0) {
-  return { answer: "I couldn't find anything…", sources: [] }
-}`
+    file: 'server/api/ask.post.ts',
+    code: `// If even the closest match scores below a fixed cutoff,
+// nothing in the archive is related: say so, don't guess.
+if (topScore < 0.48) {
+  return { state: 'nonsense', sources: [] }
+}
+// Otherwise the top five become the model's context.`
   },
   {
     file: 'server/utils/answerQuestion.ts',
-    code: `const prompt = \`Answer using ONLY the APOD descriptions
-below. If they don't cover it, reply with exactly
-NO_MATCH and nothing else.
+    code: `const prompt = \`Answer using ONLY the APOD descriptions,
+in a light Star Trek voice. Reply "NONSENSE :: <quip>" for
+gibberish, "NO_MATCH :: <quip>" if it's real but uncovered.
 
 \${context}
 

@@ -2,8 +2,8 @@
 // The Ask page: the RAG front end. A question goes to POST /api/ask, which
 // embeds it, retrieves the closest APOD texts by cosine similarity, and has
 // Gemini write a grounded answer. Five states drive the whole UI:
-//   idle → loading → answer   (with sources)
-//                  ↘ empty    (nothing above the relevance threshold)
+//   idle → loading → answer   (with sources; may be a "closest matches" note)
+//                  ↘ empty    (nothing in the archive comes close)
 //                  ↘ error    (request failed)
 // The pipeline footer mirrors `status` via useAskStatus().
 import { marked } from 'marked'
@@ -57,33 +57,27 @@ const errorDetail = ref('')
 const askHint = ref('')
 // Example prompts start collapsed behind a toggle so the idle screen stays calm.
 const showExamples = ref(false)
-// True when the model replied it can't answer from the sources (off-topic /
-// nonsense), which earns the playful roast instead of the neutral copy.
-const emptyOffTopic = ref(false)
-const emptyMessage = computed(() =>
-  emptyOffTopic.value
-    ? states.value?.nonsense ?? ''
-    : `${states.value?.empty ?? ''} ${states.value?.emptyHintSuffix ?? ''}`.trim()
-)
+// True when sources matched but the model couldn't answer from them: the answer
+// view then shows a "closest matches" note in place of the AI text.
+const noDirectAnswer = ref(false)
+// Gemini's own in-character one-liner for the nonsense / noAnswer states; shown in
+// place of the static fallback copy when present.
+const remark = ref('')
 // Which source is shown big in the hero. 0 = the top match (the answer hero);
 // clicking another source card swaps the hero to that picture.
 const heroIndex = ref(0)
 
-// Relevance tolerance: the cutoff a source's score must clear to count as relevant.
-// The slider exposes it; DEFAULT_THRESHOLD mirrors the backend default. `threshold`
-// drives the live dimming (client-only, free). `lastAskedThreshold` is the value the
-// current answer was actually fetched with, so we know when re-asking would change
-// anything.
+// Relevance tolerance: the score below which a source is dimmed out. This is
+// purely client-side polish on the results already returned; the backend decides
+// relevance with its own fixed cutoff. The slider drives the live dimming and
+// syncs to `?t=`, so there is nothing to re-fetch when it moves.
 const DEFAULT_THRESHOLD = 0.55
 const threshold = ref(DEFAULT_THRESHOLD)
-const lastAskedThreshold = ref(DEFAULT_THRESHOLD)
 // reka-ui's Slider supports multiple thumbs, so its v-model is an array.
 const thresholdModel = computed({
   get: () => [threshold.value],
   set: (value: number[]) => { threshold.value = value[0] ?? DEFAULT_THRESHOLD }
 })
-// Only worth re-asking once the slider moved off the value we last searched with.
-const thresholdChanged = computed(() => Math.abs(threshold.value - lastAskedThreshold.value) > 0.001)
 // True once the slider filters out every source: the shown answer + hero no longer
 // reflect a valid result, so we mask them with a tolerance-empty state.
 const allBelowThreshold = computed(() =>
@@ -160,25 +154,26 @@ async function submit() {
   try {
     const data = await $fetch<AskResponse>('/api/ask', {
       method: 'POST',
-      body: { question: q, threshold: threshold.value }
+      body: { question: q }
     })
     if (id !== requestId) return
-    lastAskedThreshold.value = threshold.value
     queryEcho.value = data.question || q
     timing.value = `${((performance.now() - started) / 1000).toFixed(2)} s`
 
-    if (data.answer) {
-      // A grounded answer came back: show it with its sources.
-      sources.value = data.sources ?? []
-      answer.value = data.answer
-      status.value = 'answer'
-      announce(a11y.value?.answerReady ?? '', answerHeading)
-    } else {
-      // Nothing above the threshold, or the model ruled the question off-topic.
+    remark.value = data.remark ?? ''
+    if (data.state === 'nonsense') {
+      // Gibberish: the playful black-hole screen with Gemini's own quip.
       sources.value = []
-      emptyOffTopic.value = Boolean(data.offTopic)
       status.value = 'empty'
       announce(a11y.value?.noResults ?? '', emptyHeading)
+    } else {
+      // 'answer' or 'noAnswer' both show the hero + sources; noAnswer just swaps
+      // the AI text for a "closest matches" note.
+      sources.value = data.sources ?? []
+      answer.value = data.answer
+      noDirectAnswer.value = data.state === 'noAnswer'
+      status.value = 'answer'
+      announce(a11y.value?.answerReady ?? '', answerHeading)
     }
   } catch (err) {
     if (id !== requestId) return
@@ -201,7 +196,8 @@ function clearLocal() {
   queryEcho.value = ''
   heroIndex.value = 0
   errorDetail.value = ''
-  emptyOffTopic.value = false
+  noDirectAnswer.value = false
+  remark.value = ''
   liveMessage.value = ''
 }
 
@@ -305,9 +301,9 @@ watch(sliderSources, async () => {
 function selectSource(index: number) {
   heroIndex.value = index
   // Reflect the featured source in the URL (omit for the top match / index 0).
-  // Keep q + the tolerance the current answer was fetched with; add/drop hero.
+  // Keep q + the current tolerance; add/drop hero.
   const q = typeof route.query.q === 'string' ? route.query.q : ''
-  router.replace({ query: shareQuery(q, index, lastAskedThreshold.value) })
+  router.replace({ query: shareQuery(q, index, threshold.value) })
   if (import.meta.client) {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' })
@@ -557,7 +553,7 @@ function selectSource(index: number) {
               id="answer-heading"
               class="text-sm text-accent-purple"
             >
-              {{ answerCopy?.heading }}
+              {{ noDirectAnswer ? answerCopy?.closestHeading : answerCopy?.heading }}
             </h3>
           </div>
           <!-- When the slider filters every source out, the earlier answer no
@@ -567,6 +563,13 @@ function selectSource(index: number) {
             class="answer-prose text-text-secondary"
           >
             {{ answerCopy?.toleranceEmpty }}
+          </p>
+          <!-- No grounded answer, but the sources are still the closest matches. -->
+          <p
+            v-else-if="noDirectAnswer"
+            class="answer-prose text-text-secondary"
+          >
+            {{ remark || answerCopy?.noAnswerNote }}
           </p>
           <!-- Rendered from our own grounded LLM output, not user input. -->
           <!-- eslint-disable-next-line vue/no-v-html -->
@@ -635,14 +638,6 @@ function selectSource(index: number) {
               />
               <span class="w-9 font-mono text-xs tabular-nums text-text-secondary">{{ threshold.toFixed(2) }}</span>
               <InfoTooltip :text="answerCopy?.toleranceHint" />
-              <button
-                v-if="thresholdChanged"
-                type="button"
-                class="ml-auto animate-fade-up whitespace-nowrap rounded-lg border border-accent-cyan/40 bg-accent-cyan/10 px-3 py-1.5 text-xs text-text-strong transition-colors hover:border-accent-cyan/70"
-                @click="submit"
-              >
-                {{ answerCopy?.askAgain }}
-              </button>
             </div>
 
             <!-- Source carousel: every source except the one in the hero. Embla
@@ -746,7 +741,7 @@ function selectSource(index: number) {
         {{ states?.emptyHeading }}
       </h2>
       <p class="mx-auto mt-3 max-w-[440px] text-base leading-relaxed text-text-muted">
-        {{ emptyMessage }}
+        {{ remark || states?.nonsense }}
       </p>
       <button
         type="button"

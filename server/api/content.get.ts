@@ -49,6 +49,9 @@ export default defineEventHandler(() => {
     },
     answer: {
       heading: 'Answer',
+      // Shown above the sources when the model had no direct answer.
+      closestHeading: 'Closest matches',
+      noAnswerNote: 'No direct answer in the APOD texts, but these came closest to what you asked.',
       sourcesHeading: 'Sources',
       newSearch: 'New search',
       // "{n} APOD pictures", the count is prepended in the component.
@@ -62,9 +65,8 @@ export default defineEventHandler(() => {
       nextSource: 'Next source',
       showInHero: 'Show {title} in the hero',
       tolerance: 'Relevance',
-      toleranceHint: 'Sources below the line are left out. Ask again to apply.',
-      askAgain: 'Ask again at this tolerance',
-      toleranceEmpty: 'No source clears this relevance. Ease the slider back down, or ask again.'
+      toleranceHint: 'Dims the weaker sources so the strong ones stand out. Updates live, no re-ask needed.',
+      toleranceEmpty: 'You have dimmed every source. Ease the slider back down.'
     },
     a11y: {
       answerReady: 'Answer ready.',
@@ -72,10 +74,8 @@ export default defineEventHandler(() => {
       requestError: 'The request failed.'
     },
     states: {
-      empty: "I couldn't find anything about that in the APOD texts.",
       emptyHeading: 'Nothing crossed the event horizon.',
-      emptyHintSuffix: 'Try an astronomy topic: stars, galaxies, nebulae, planets, comets. Or lower the relevance if you set it high.',
-      nonsense: "Hmm, none of the APOD texts actually answer that one. Try an astronomy topic, or rephrase your question.",
+      nonsense: "Come on, don't waste Melanie's tokens on that one. Ask me something actually about space.",
       error: 'Something went wrong reaching the stars. Please try again.',
       errorHeading: 'The signal fell into a black hole.',
       retry: 'Try again',
@@ -102,7 +102,7 @@ export default defineEventHandler(() => {
           role: 'Rank',
           color: 'purple',
           name: 'Keep the best matches',
-          desc: 'The results are sorted by similarity and the top five are kept as sources. If even the best match is too weak (below a relevance threshold), the app says it found nothing instead of inventing an answer.'
+          desc: 'The five closest texts are kept as sources. If even the top one scores below a fixed cutoff, nothing in the archive is related, so the app says so instead of inventing an answer. The relevance slider on the Ask page is separate: it only dims weak sources for you, it does not decide this.'
         },
         {
           role: 'Answer',

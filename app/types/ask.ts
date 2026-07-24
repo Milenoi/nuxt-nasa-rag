@@ -11,13 +11,20 @@ export type Source = {
   thumbnailUrl?: string
 }
 
+// What the backend decided about the question:
+//   answer   - a grounded answer drawn from the sources
+//   noAnswer - sources matched, but the model can't answer from them (show them anyway)
+//   nonsense - nothing in the archive comes close; no answer attempted
+export type AskState = 'answer' | 'noAnswer' | 'nonsense'
+
 // The /api/ask response.
 export type AskResponse = {
   question: string
   answer: string
   sources: Source[]
-  topScore?: number
-  threshold?: number
-  // The model couldn't answer from the sources (off-topic / nonsense question).
-  offTopic?: boolean
+  topScore: number
+  state: AskState
+  // Gemini's own one-liner for the nonsense / noAnswer states, in the question's
+  // language (cheeky or encouraging). Empty when it didn't supply one.
+  remark?: string
 }
