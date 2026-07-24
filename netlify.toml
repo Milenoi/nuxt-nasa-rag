@@ -7,6 +7,10 @@
     'https://i.ytimg.com/.*'
   ]
 
+[build]
+  # Run the unit tests before building; a failing test aborts the deploy.
+  command = "npm run test && npm run build"
+
 [build.environment]
   # These env vars are consumed only by the server-side Nitro function (SSR) and
   # are never shipped to the browser; NUXT_NASA_APOD_API_URL is a public, non-secret
