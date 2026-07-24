@@ -75,7 +75,7 @@ export default defineEventHandler(() => {
       empty: "I couldn't find anything about that in the APOD texts.",
       emptyHeading: 'Nothing crossed the event horizon.',
       emptyHintSuffix: 'Try an astronomy topic: stars, galaxies, nebulae, planets, comets. Or lower the relevance if you set it high.',
-      nonsense: "Come on, don't waste Melanie's tokens on questions that have nothing to do with space. (Or, if you set relevance too high, drag it back down.)",
+      nonsense: "Hmm, none of the APOD texts actually answer that one. Try an astronomy topic, or rephrase your question.",
       error: 'Something went wrong reaching the stars. Please try again.',
       errorHeading: 'The signal fell into a black hole.',
       retry: 'Try again',
