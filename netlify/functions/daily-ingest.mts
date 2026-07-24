@@ -40,7 +40,7 @@ export default async () => {
     return new Response(`Upserted ${entry.date}: ${entry.title}`, { status: 200 })
 }
 
-// Uncomment to activate the daily cron (08:00 UTC, after APOD publishes):
-// export const config = {
-//     schedule: '0 8 * * *'
-// }
+// Daily cron: 08:00 UTC, after APOD publishes its new image.
+export const config = {
+    schedule: '0 8 * * *'
+}
