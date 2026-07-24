@@ -3,6 +3,7 @@ import { resolveQuestion } from '../usecases/resolveQuestion'
 import { geminiEmbedder } from '../infrastructure/geminiEmbedder'
 import { upstashVectorStore } from '../infrastructure/upstashVectorStore'
 import { geminiLanguageModel } from '../infrastructure/geminiLanguageModel'
+import { geminiQueryRewriter } from '../infrastructure/geminiQueryRewriter'
 
 // Map an upstream Gemini/Upstash failure to a client error carrying its real
 // status (429 quota, 403 forbidden, ...), so describeError can name the cause
@@ -22,19 +23,21 @@ export default defineEventHandler(async (event) => {
     const question = body?.question
     if (!question) throw createError({ statusCode: 400, statusMessage: 'Missing question' })
 
-    // Star Trek personality toggle from the client; default off.
+    // Client toggles; both default off.
     const playful = body?.starTrek === true
+    const rewrite = body?.rewrite === true
 
     // Composition root: read config once, wire the concrete adapters into the use case.
     const config = loadRagConfig()
     const deps = {
         embedder: geminiEmbedder(config.geminiApiKey),
         vectorStore: upstashVectorStore(config.upstashUrl, config.upstashToken),
-        model: geminiLanguageModel(config.geminiApiKey)
+        model: geminiLanguageModel(config.geminiApiKey),
+        rewriter: geminiQueryRewriter(config.geminiApiKey)
     }
 
     try {
-        return { question, ...(await resolveQuestion(question, playful, deps)) }
+        return { question, ...(await resolveQuestion(question, { playful, rewrite }, deps)) }
     } catch (err) {
         throw upstreamError(err)
     }

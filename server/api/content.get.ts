@@ -47,7 +47,10 @@ export default defineEventHandler(() => {
       ],
       loading: 'Searching the cosmos…',
       personalityLabel: 'Star Trek answer mode',
-      personalityHint: 'On: answers get a playful bridge-officer voice. Off: cool and factual, straight from the sources.'
+      personalityLabelShort: 'Star Trek',
+      personalityHint: 'On: answers get a playful Star Trek bridge-officer voice. Off: cool and factual, straight from the sources.',
+      rewriteLabel: 'Smart search',
+      rewriteHint: 'Cleans up typos and vague wording before searching, so a misspelled or one-word query still finds matches. Costs one extra step.'
     },
     answer: {
       heading: 'Answer',
@@ -93,7 +96,7 @@ export default defineEventHandler(() => {
           role: 'Query',
           color: 'cyan',
           name: 'Embed the question',
-          desc: "Your question is turned into a list of 768 numbers (a vector) by Google's multilingual Gemini embedding model. The same model already turned every APOD description into a vector, so a German question can still find an English text. Meaning becomes math the computer can compare."
+          desc: "Your question is turned into a list of 768 numbers (a vector) by Google's multilingual Gemini embedding model. The same model already turned every APOD description into a vector, so a German question can still find an English text. Meaning becomes math the computer can compare. (With Smart search on, the question is cleaned up first, typos fixed, so a misspelled search still lands.)"
         },
         {
           role: 'Retrieve',

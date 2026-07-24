@@ -18,3 +18,9 @@ export interface VectorStore {
 export interface LanguageModel {
     generate(prompt: string): Promise<string>
 }
+
+// Rewrites a raw question into a cleaner search query (fixes typos, tightens
+// vague wording) before it is embedded.
+export interface QueryRewriter {
+    rewrite(question: string): Promise<string>
+}

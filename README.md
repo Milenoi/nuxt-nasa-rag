@@ -20,11 +20,11 @@ things up. If the texts don't cover an otherwise real question, it shows the clo
 pictures instead of guessing; if the input is just gibberish, it says so and stops.
 The pictures behind an answer are always shown as sources.
 
-A **Star Trek toggle** on the start screen sets the tone: on, the model adds its own
-playful in-character remarks (in the language you asked in); off, it stays cool and
-factual, straight from the sources. On the results view, a **relevance slider** dims
-the weaker sources so the strong ones stand out. Both are purely presentational and
-shareable via the URL; neither changes what counts as a match, that stays server-side.
+Two toggles on the start screen: **Smart search** rewrites your query before searching
+(fixes typos and vague wording, so a misspelled or one-word query still finds matches),
+and a **Star Trek toggle** gives the answer a playful in-character voice (off = cool and
+factual). On the results view, a **relevance slider** dims the weaker sources. All sync
+to the URL for sharing.
 
 ## Tech
 

@@ -70,6 +70,9 @@ const lastStarTrek = ref(false)
 // and a warm opener; off: cool, factual, straight from the sources. Synced to
 // `?st=` (shareable) and remembered in localStorage.
 const starTrek = ref(false)
+// Smart-search toggle (idle screen): rewrite the query (fix typos, tighten wording)
+// before searching. Synced to `?rw=` + localStorage. Default off.
+const rewrite = ref(false)
 // Which source is shown big in the hero. 0 = the top match (the answer hero);
 // clicking another source card swaps the hero to that picture.
 const heroIndex = ref(0)
@@ -142,7 +145,7 @@ let disposed = false
 // Build the shareable URL query. `t` (the tolerance) is always included so the
 // link is explicit about it; `hero` is omitted at 0 (the top match).
 function shareQuery(q: string, hero: number, tol: number): Record<string, string> {
-  const query: Record<string, string> = { q, t: tol.toFixed(2), st: starTrek.value ? '1' : '0' }
+  const query: Record<string, string> = { q, t: tol.toFixed(2), st: starTrek.value ? '1' : '0', rw: rewrite.value ? '1' : '0' }
   if (hero > 0) query.hero = String(hero)
   return query
 }
@@ -166,7 +169,7 @@ async function submit() {
   try {
     const data = await $fetch<AskResponse>('/api/ask', {
       method: 'POST',
-      body: { question: q, starTrek: starTrek.value }
+      body: { question: q, starTrek: starTrek.value, rewrite: rewrite.value }
     })
     if (id !== requestId || disposed) return
     queryEcho.value = data.question || q
@@ -248,10 +251,13 @@ onUnmounted(() => {
   clearTimeout(tUrlTimer)
 })
 
-// Remember the personality choice, and when a result is on screen keep it in the
-// shareable URL too.
-watch(starTrek, (on) => {
-  if (import.meta.client) localStorage.setItem('apod-startrek', on ? '1' : '0')
+// Remember both toggles, and when a result is on screen keep them in the shareable
+// URL too.
+watch([starTrek, rewrite], () => {
+  if (import.meta.client) {
+    localStorage.setItem('apod-startrek', starTrek.value ? '1' : '0')
+    localStorage.setItem('apod-rewrite', rewrite.value ? '1' : '0')
+  }
   const q = typeof route.query.q === 'string' ? route.query.q : ''
   if (q) router.replace({ query: shareQuery(q, heroIndex.value, threshold.value) })
 })
@@ -271,13 +277,20 @@ onMounted(async () => {
     const t = Number(tParam)
     if (!Number.isNaN(t)) threshold.value = Math.min(1, Math.max(0, t))
   }
-  // Restore the personality toggle: URL param wins (shared link), else localStorage.
+  // Restore the toggles: URL param wins (shared link), else localStorage.
   const stParam = route.query.st
   if (stParam === '0' || stParam === '1') {
     starTrek.value = stParam === '1'
   } else if (import.meta.client) {
     const stored = localStorage.getItem('apod-startrek')
     if (stored === '0' || stored === '1') starTrek.value = stored === '1'
+  }
+  const rwParam = route.query.rw
+  if (rwParam === '0' || rwParam === '1') {
+    rewrite.value = rwParam === '1'
+  } else if (import.meta.client) {
+    const stored = localStorage.getItem('apod-rewrite')
+    if (stored === '0' || stored === '1') rewrite.value = stored === '1'
   }
   if (typeof shared === 'string' && shared.trim()) {
     query.value = shared
@@ -362,7 +375,7 @@ function selectSource(index: number) {
     <!-- ═══════════ IDLE, the hero + ask box ═══════════ -->
     <section
       v-if="status === 'idle'"
-      class="mx-auto flex min-h-[calc(100dvh-3.25rem)] max-w-[820px] flex-col px-5 pb-16 pt-24 animate-fade-up md:px-8 md:pt-[19vh]"
+      class="mx-auto flex min-h-[calc(100dvh-3.25rem)] max-w-[820px] flex-col px-5 pb-16 pt-28 animate-fade-up md:px-8 md:pt-[19vh]"
     >
       <p class="mb-6 text-sm text-text-faint">
         {{ hero?.eyebrow }}
@@ -405,31 +418,24 @@ function selectSource(index: number) {
         {{ askHint }}
       </p>
 
-      <!-- Personality toggle, set BEFORE asking: Star Trek voice on/off. Purely a
-           tone switch, it changes how the answer reads, never what it draws from. -->
-      <div class="mt-7 max-w-[680px]">
-        <div class="flex items-center gap-3">
-          <button
-            type="button"
-            role="switch"
-            :aria-checked="starTrek"
-            :aria-label="ask?.personalityLabel"
-            class="group inline-flex items-center gap-2.5 rounded-full text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan/50 focus-visible:ring-offset-2 focus-visible:ring-offset-space-deep"
-            :class="starTrek ? 'text-text-strong' : 'text-text-faint hover:text-text-secondary'"
-            @click="starTrek = !starTrek"
-          >
-            <span
-              class="relative inline-flex h-7 w-12 flex-shrink-0 items-center rounded-full border-2 border-white/10 bg-white/5 px-0.5 transition-colors duration-300 group-hover:border-white/20"
-            >
-              <span
-                class="size-5 rounded-full transition-all duration-300"
-                :class="starTrek
-                  ? 'translate-x-5 bg-accent-cyan shadow-[0_0_12px_0_var(--accent-cyan)]'
-                  : 'translate-x-0 bg-text-faint'"
-              />
-            </span>
-            <span class="whitespace-nowrap">{{ ask?.personalityLabel }}</span>
-          </button>
+      <!-- Two toggles, set BEFORE asking. Star Trek = answer tone; Smart search =
+           rewrite the query before searching. Both only shape input/tone, not what
+           counts as a match. flex-wrap keeps them on one line on phones and only
+           wraps on very narrow screens. -->
+      <div class="mt-7 flex max-w-[680px] flex-wrap items-center gap-x-5 gap-y-3">
+        <div class="flex items-center gap-2">
+          <PillToggle
+            v-model="rewrite"
+            :label="ask?.rewriteLabel"
+          />
+          <InfoTooltip :text="ask?.rewriteHint" />
+        </div>
+        <div class="flex items-center gap-2">
+          <PillToggle
+            v-model="starTrek"
+            :label="ask?.personalityLabel"
+            :label-short="ask?.personalityLabelShort"
+          />
           <InfoTooltip :text="ask?.personalityHint" />
         </div>
       </div>

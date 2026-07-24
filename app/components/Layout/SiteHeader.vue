@@ -37,7 +37,7 @@ watch(
   <header class="fixed left-1/2 top-0 z-50 w-full -translate-x-1/2">
     <!-- Blurred gradient scrim that fades out downward (no hard edge). -->
     <div
-      class="pointer-events-none absolute inset-x-0 top-0 h-[140px] backdrop-blur-[11px] bg-[linear-gradient(180deg,rgba(5,5,6,0.62)_0%,rgba(5,5,6,0.26)_46%,transparent_100%)] [mask-image:linear-gradient(180deg,#000_0%,#000_48%,transparent_100%)] [-webkit-mask-image:linear-gradient(180deg,#000_0%,#000_48%,transparent_100%)]"
+      class="pointer-events-none absolute inset-x-0 top-0 h-[104px] backdrop-blur-[11px] bg-[linear-gradient(180deg,rgba(5,5,6,0.62)_0%,rgba(5,5,6,0.26)_46%,transparent_100%)] [mask-image:linear-gradient(180deg,#000_0%,#000_48%,transparent_100%)] [-webkit-mask-image:linear-gradient(180deg,#000_0%,#000_48%,transparent_100%)] md:h-[140px]"
     />
 
     <nav
