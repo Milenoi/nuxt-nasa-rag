@@ -39,17 +39,23 @@ The look is a dark, editorial space theme with a live pipeline in the footer and
 draggable Taurus constellation as an easter egg. There are three pages: the Ask
 page, a "how it works" walkthrough, and an about page.
 
-## Why some files are still here
+## Architecture
 
-This is a learning project, so I kept the earlier attempts in the repo on purpose
-instead of deleting them, they show how it got here:
+The query path follows a clean-architecture split, so the core does not depend on the
+specific tech:
 
-- **`data/apod-vectors.json`** plus the **hand-written cosine similarity** in
-  `server/utils/search.ts` were plan A. Retrieval ran on a plain JSON file and a few
-  lines of my own dot-product math, so I could actually see how it works before
-  reaching for a database. The app now runs on Upstash Vector, but the old code
-  stays as a record of the progress. The About page tells that plan-A-to-plan-B
-  story in full.
+- **`server/domain/`** plain types (the entities).
+- **`server/usecases/`** the `resolveQuestion` use case plus the ports it needs, an
+  `Embedder`, a `VectorStore` and a `LanguageModel`.
+- **`server/infrastructure/`** the adapters that fulfil those ports (Gemini, Upstash),
+  plus a small `config.ts` that reads the keys once and injects them.
+- **`server/api/ask.post.ts`** a thin controller that wires the adapters into the use
+  case (the composition root).
+
+Swapping Gemini for another model, or Upstash for another store, means writing one new
+adapter, the core stays untouched, and the use case is testable with fake adapters (no
+real APIs). The About page tells the plan-A-to-plan-B story (hand-written cosine over a
+JSON file, then a hosted vector database).
 
 ## Development
 

@@ -2,11 +2,10 @@ import 'dotenv/config'
 import { embed } from '../server/utils/embed'
 import { isUsableApod, toVectorItem } from '../server/utils/apodVector'
 import { Index } from '@upstash/vector'
-// import { writeFileSync, mkdirSync } from 'node:fs'
-// import type { ApodRecord } from '../shared/apod'
+import { loadRagConfig, loadNasaConfig } from '../server/infrastructure/config'
 
-const NASA_API_KEY = process.env.NASA_API_KEY
-const NASA_APOD_API_URL = process.env.NUXT_NASA_APOD_API_URL
+const config = loadRagConfig()
+const nasa = loadNasaConfig()
 
 const DAYS_BACK = 1095 // how far back from today to fetch (1095 ≈ three years)
 const CHUNK_DAYS = 90 // NASA 500s on very large ranges, so fetch in windows this size
@@ -20,7 +19,7 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 // (429 / quota) with a short backoff before giving up.
 async function embedWithRetry(text: string, attempt = 1): Promise<number[]> {
     try {
-        return await embed(text)
+        return await embed(text, config.geminiApiKey)
     } catch (err) {
         const message = String((err as Error)?.message ?? err)
         const rateLimited = message.includes('429') || /quota|rate|exhausted/i.test(message)
@@ -36,7 +35,7 @@ async function embedWithRetry(text: string, attempt = 1): Promise<number[]> {
 
 // Fetch one date-range window, retrying a few times on transient errors.
 async function fetchRange(startIso: string, endIso: string, attempt = 1) {
-    const url = `${NASA_APOD_API_URL}?api_key=${NASA_API_KEY}&start_date=${startIso}&end_date=${endIso}&thumbs=true`
+    const url = `${nasa.apodUrl}?api_key=${nasa.apiKey}&start_date=${startIso}&end_date=${endIso}&thumbs=true`
     const response = await fetch(url)
 
     if (!response.ok) {
@@ -55,9 +54,6 @@ async function fetchRange(startIso: string, endIso: string, attempt = 1) {
 }
 
 async function main() {
-    if (!NASA_API_KEY) throw new Error('NASA_API_KEY missing in .env')
-    if (!NASA_APOD_API_URL) throw new Error('NUXT_NASA_APOD_API_URL missing in .env')
-
     // 1. Fetch the whole [today - DAYS_BACK, today] span in CHUNK_DAYS windows.
     const today = new Date()
     const chunkStart = new Date()
@@ -81,28 +77,8 @@ async function main() {
     const usable = entries.filter(isUsableApod)
     console.log(`Got ${usable.length} usable entries (images and videos) from ${entries.length}. Embedding...`)
 
-    // 3. Embed each explanation and build our records.
-    /*
-    const records: ApodRecord[] = []
-    for (let i = 0; i < usable.length; i++) {
-        const entry = usable[i]
-        const vector = await embedWithRetry(entry.explanation)
-        await sleep(120) // gentle pacing so we stay under the per-minute limit
-        records.push({
-            date: entry.date,
-            title: entry.title,
-            imageUrl: entry.url,
-            explanation: entry.explanation,
-            mediaType: entry.media_type,
-            thumbnailUrl: entry.thumbnail_url,
-            vector
-        })
-        console.log(`  ${i + 1}/${usable.length}: ${entry.title}`)
-    }
-    */
-
     // 3. Embed + upsert in small batches, skipping days already stored.
-    const index = Index.fromEnv()
+    const index = new Index({ url: config.upstashUrl, token: config.upstashToken })
 
     // Gather the day-IDs already in the DB (IDs are the APOD dates). A re-run
     // after an aborted ingest then only embeds the days it hasn't done yet, so
@@ -146,13 +122,6 @@ async function main() {
     }
 
     console.log(`Done! ${done} new vectors upserted (${existing.size + done} total in the DB).`)
-
-    // Plan A (kept for reference): write the filled shelf to disk as JSON.
-    /*
-    mkdirSync('data', { recursive: true })
-    writeFileSync('data/apod-vectors.json', JSON.stringify(records, null, 2))
-    console.log(`Done! Wrote ${records.length} records to data/apod-vectors.json`)
-    */
 }
 
 main()

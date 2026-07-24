@@ -1,5 +1,3 @@
-import { embed } from './embed'
-
 // Shared by both ingest paths: turn an APOD entry into an Upstash record.
 
 export interface ApodEntry {
@@ -26,10 +24,11 @@ export interface ApodMetadata {
     thumbnailUrl: string
 }
 
-// embed is injected so the backfill can pass its retrying variant.
+// embed is injected by the caller (bound to its API key), so the backfill can pass
+// its retrying variant and nothing here reaches for config.
 export async function toVectorItem(
     entry: ApodEntry,
-    embedFn: (text: string) => Promise<number[]> = embed
+    embedFn: (text: string) => Promise<number[]>
 ) {
     const vector = await embedFn(entry.explanation)
     const metadata: ApodMetadata = {

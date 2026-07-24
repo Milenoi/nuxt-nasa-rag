@@ -105,7 +105,7 @@ export default defineEventHandler(() => {
           role: 'Rank',
           color: 'purple',
           name: 'Keep the best matches',
-          desc: 'The five closest texts are kept as sources. A cheap score cutoff skips the model when the best match is far off, but scores alone cannot spot gibberish (random text often scores high), so the real call is left to the model in the next step. The relevance slider on the results page is separate: it only dims weak sources for you, it decides nothing here.'
+          desc: "Upstash already hands the matches back sorted by similarity, so this step just takes the top five and applies one cheap guard: if even the closest match scores far too low, skip the model and show the nonsense screen. Scores alone can't tell gibberish from a real question (random text often scores high), so the real judgement is the model's, in the next step. The relevance slider on the results page is separate: it only dims weak sources, it decides nothing here."
         },
         {
           role: 'Answer',
@@ -142,7 +142,7 @@ export default defineEventHandler(() => {
       techStack: [
         { label: 'Framework', value: 'Nuxt 4 + Vue, Nitro server routes' },
         { label: 'Embeddings', value: 'Google Gemini: gemini-embedding-001 (multilingual, 768-dim)' },
-        { label: 'Vector store', value: 'Upstash Vector (hand-written cosine kept as plan A)' },
+        { label: 'Vector store', value: 'Upstash Vector (was hand-written cosine over JSON first)' },
         { label: 'Language model', value: 'Google Gemini: gemini-flash-latest (free tier)' },
         { label: 'Data', value: 'NASA Astronomy Picture of the Day API' },
         { label: 'Ingest', value: 'Manual backfill script + a daily Netlify function' },

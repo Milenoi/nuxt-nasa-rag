@@ -34,7 +34,7 @@ const snippets: { file: string; code: string }[] = [
 return normalize(response.embeddings[0].values)`
   },
   {
-    file: 'server/utils/answerQuestion.ts',
+    file: 'server/infrastructure/upstashVectorStore.ts',
     code: `// The question vector goes to the Upstash Vector index,
 // which returns the closest APOD vectors by cosine similarity.
 const matches = await index.query({
@@ -44,17 +44,18 @@ const matches = await index.query({
 })`
   },
   {
-    file: 'server/utils/answerQuestion.ts',
-    code: `// Cheap pre-filter: skip the model when even the closest
-// match is far off, and show the "nonsense" screen.
+    file: 'server/usecases/resolveQuestion.ts',
+    code: `// The matches come back sorted; the top five are the sources.
+// Cheap guard: if even the closest scores far too low, skip
+// the model and show the "nonsense" screen.
 if (topScore < 0.48) {
   return { state: 'nonsense', sources: [] }
 }
 // Otherwise the model itself judges the input (next step).`
   },
   {
-    file: 'server/utils/answerQuestion.ts',
-    code: `// The model gets the texts + question and picks a path:
+    file: 'server/usecases/resolveQuestion.ts',
+    code: `// Build the grounded prompt (answer only from these texts)...
 const prompt = \`Answer using ONLY the APOD descriptions.
 Reply NONSENSE for gibberish, NO_MATCH for a real question
 the texts don't cover, else answer and cite the picture.
@@ -62,10 +63,9 @@ the texts don't cover, else answer and cite the picture.
 \${context}
 Question: \${question}\`
 
-const response = await ai.models.generateContent({
-  model: 'gemini-flash-latest',
-  contents: prompt
-})`
+// ...then ask the model through a port. Gemini itself lives in
+// an adapter, so the use case never depends on the SDK.
+const reply = await model.generate(prompt)`
   }
 ]
 
