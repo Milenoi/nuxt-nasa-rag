@@ -18,13 +18,13 @@ learning project, and a sibling to my
 Because the answer can only draw from the retrieved descriptions, it does not make
 things up. If the texts don't cover an otherwise real question, it shows the closest
 pictures instead of guessing; if the input is just gibberish, it says so and stops.
-The pictures behind an answer are always shown as sources. The little remarks along
-the way (a tease for gibberish, a nod for a good question) are written by the model
-itself, in a light Star Trek voice and the language you asked in.
+The pictures behind an answer are always shown as sources.
 
-The **relevance slider** is purely visual: it dims the weaker sources so the strong
-ones stand out, and it updates live. It does **not** change the answer or decide
-what counts as a match, that stays server-side.
+A **Star Trek toggle** on the start screen sets the tone: on, the model adds its own
+playful in-character remarks (in the language you asked in); off, it stays cool and
+factual, straight from the sources. On the results view, a **relevance slider** dims
+the weaker sources so the strong ones stand out. Both are purely presentational and
+shareable via the URL; neither changes what counts as a match, that stays server-side.
 
 ## Tech
 

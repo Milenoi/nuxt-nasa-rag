@@ -44,22 +44,22 @@ const matches = await index.query({
 })`
   },
   {
-    file: 'server/api/ask.post.ts',
-    code: `// If even the closest match scores below a fixed cutoff,
-// nothing in the archive is related: say so, don't guess.
+    file: 'server/utils/answerQuestion.ts',
+    code: `// Cheap pre-filter: skip the model when even the closest
+// match is far off, and show the "nonsense" screen.
 if (topScore < 0.48) {
   return { state: 'nonsense', sources: [] }
 }
-// Otherwise the top five become the model's context.`
+// Otherwise the model itself judges the input (next step).`
   },
   {
     file: 'server/utils/answerQuestion.ts',
-    code: `const prompt = \`Answer using ONLY the APOD descriptions,
-in a light Star Trek voice. Reply "NONSENSE :: <quip>" for
-gibberish, "NO_MATCH :: <quip>" if it's real but uncovered.
+    code: `// The model gets the texts + question and picks a path:
+const prompt = \`Answer using ONLY the APOD descriptions.
+Reply NONSENSE for gibberish, NO_MATCH for a real question
+the texts don't cover, else answer and cite the picture.
 
 \${context}
-
 Question: \${question}\`
 
 const response = await ai.models.generateContent({

@@ -9,7 +9,7 @@ const githubUrl = computed(() => content.value?.header?.githubUrl)
 useSeoMeta({
   title: 'About | APOD Ask',
   description:
-    'A hands-on RAG learning project over NASA APOD: local Transformers.js embeddings, hand-written cosine search, and Google Gemini for grounded answers.'
+    'A hands-on RAG learning project over NASA APOD: Google Gemini embeddings, an Upstash vector store, and grounded Gemini answers, built from the ground up to learn how RAG works.'
 })
 </script>
 

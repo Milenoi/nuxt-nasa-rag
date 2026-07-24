@@ -45,7 +45,9 @@ export default defineEventHandler(() => {
         'A colorful nebula shaped like an animal',
         'How does a supernova happen?'
       ],
-      loading: 'Searching the cosmos…'
+      loading: 'Searching the cosmos…',
+      personalityLabel: 'Star Trek answer mode',
+      personalityHint: 'On: answers get a playful bridge-officer voice. Off: cool and factual, straight from the sources.'
     },
     answer: {
       heading: 'Answer',
@@ -76,6 +78,7 @@ export default defineEventHandler(() => {
     states: {
       emptyHeading: 'Nothing crossed the event horizon.',
       nonsense: "Come on, don't waste Melanie's tokens on that one. Ask me something actually about space.",
+      nonsensePlain: 'That does not look like an astronomy question. Try asking about something in the night sky.',
       error: 'Something went wrong reaching the stars. Please try again.',
       errorHeading: 'The signal fell into a black hole.',
       retry: 'Try again',
@@ -102,13 +105,13 @@ export default defineEventHandler(() => {
           role: 'Rank',
           color: 'purple',
           name: 'Keep the best matches',
-          desc: 'The five closest texts are kept as sources. If even the top one scores below a fixed cutoff, nothing in the archive is related, so the app says so instead of inventing an answer. The relevance slider on the Ask page is separate: it only dims weak sources for you, it does not decide this.'
+          desc: 'The five closest texts are kept as sources. A cheap score cutoff skips the model when the best match is far off, but scores alone cannot spot gibberish (random text often scores high), so the real call is left to the model in the next step. The relevance slider on the results page is separate: it only dims weak sources for you, it decides nothing here.'
         },
         {
           role: 'Answer',
           color: 'green',
           name: 'Generate a grounded answer',
-          desc: 'The question and the retrieved texts go to Google Gemini with a single rule: answer only from these descriptions. That grounding is what keeps the answer honest, and it is why we can show the exact NASA pictures it drew from.'
+          desc: "The question and the top texts go to Google Gemini with clear rules: reply NONSENSE for gibberish, NO_MATCH for a real question the texts don't cover, otherwise answer using only those descriptions and name the picture. That grounding keeps it honest, and an optional Star Trek toggle changes only the tone, never the facts."
         }
       ],
       footnote: 'Built with Nuxt 4 and Google Gemini, a sibling to the',

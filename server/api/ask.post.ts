@@ -1,9 +1,3 @@
-// Cheap pre-filter: if even the closest match is this weak, skip the Gemini call
-// and go straight to nonsense. The real gibberish-vs-question judgement is left to
-// Gemini (NONSENSE vs NO_MATCH); embedding scores alone can't tell them apart
-// (random input like "aqqwqqq" often scores high).
-const NONSENSE_CUTOFF = 0.48
-
 // Map an upstream Gemini/Upstash failure to a client error carrying its real
 // status (429 quota, 403 forbidden, ...), so describeError can name the cause
 // instead of a generic 500 that reads as a connection drop.
@@ -15,37 +9,18 @@ function upstreamError(err: unknown) {
     return createError({ statusCode: code, statusMessage: `Answer service failed (${code})` })
 }
 
-// Thin controller: embed the question, retrieve sources, decide the state.
+// Thin controller: read the body, run the RAG pipeline, map upstream errors.
 export default defineEventHandler(async (event) => {
     const body = await readBody(event)
     const question = body?.question
     if (!question) throw createError({ statusCode: 400, statusMessage: 'Missing question' })
 
-    // Embedding + retrieval; surface upstream failures (e.g. 403 bad key) cleanly.
-    const { sources, topScore } = await retrieveSources(question).catch((e) => { throw upstreamError(e) })
+    // Star Trek personality toggle from the client; default off.
+    const playful = body?.starTrek === true
 
-    // Nothing in the archive comes close: don't spend a Gemini call on it.
-    if (topScore < NONSENSE_CUTOFF) {
-        return { question, answer: '', sources: [], topScore, state: 'nonsense' as const }
+    try {
+        return { question, ...(await resolveQuestion(question, playful)) }
+    } catch (err) {
+        throw upstreamError(err)
     }
-
-    // Generation; same clean error handling as retrieval.
-    const raw = await generateAnswer(question, sources).catch((e) => { throw upstreamError(e) })
-
-    const trimmed = raw.trimStart()
-
-    // Gibberish: Gemini appends its own cheeky line after the sentinel.
-    if (/^NONSENSE\b/i.test(trimmed)) {
-        const remark = trimmed.replace(/^NONSENSE\b[:\s]*/i, '').trim()
-        return { question, answer: '', sources: [], topScore, state: 'nonsense' as const, remark }
-    }
-
-    // Real question the sources don't answer: hand them back as the closest
-    // pictures, with Gemini's encouraging line.
-    if (/^NO_MATCH\b/i.test(trimmed)) {
-        const remark = trimmed.replace(/^NO_MATCH\b[:\s]*/i, '').trim()
-        return { question, answer: '', sources, topScore, state: 'noAnswer' as const, remark }
-    }
-
-    return { question, answer: raw, sources, topScore, state: 'answer' as const }
 })
