@@ -2,12 +2,18 @@
 // Standalone error page, Nuxt renders this OUTSIDE the layout, so the shell
 // (starfield, header, footer) is included here directly. Same dark, spacey look
 // as the app: a black hole with the status code glowing inside it.
+import { useMediaQuery } from '@vueuse/core'
+
 const props = defineProps<{
   error: { statusCode?: number; statusMessage?: string; message?: string }
 }>()
 
 const code = computed(() => props.error?.statusCode ?? 500)
 const isNotFound = computed(() => code.value === 404)
+
+// A touch larger on desktop; 240px reads small on a wide screen.
+const isWide = useMediaQuery('(min-width: 768px)')
+const holeSize = computed(() => (isWide.value ? 320 : 240))
 
 // clearError unwinds the error state before navigating back to the app.
 const goHome = () => clearError({ redirect: '/' })
@@ -21,7 +27,7 @@ const goHome = () => clearError({ redirect: '/' })
     <main class="animate-fade-up relative z-10 flex min-h-dvh flex-col items-center justify-center px-5 py-20 text-center">
       <BlackHole
         variant="cool"
-        :size="240"
+        :size="holeSize"
       >
         <span class="code-glyph font-serif text-[clamp(48px,10vw,88px)] font-light leading-none tracking-tight text-text-strong">
           {{ code }}
