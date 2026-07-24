@@ -504,7 +504,7 @@ function selectSource(index: number) {
         </div>
 
         <!-- Caption, aligned to the content container -->
-        <figcaption class="pointer-events-none absolute inset-x-0 bottom-9">
+        <figcaption class="pointer-events-none absolute inset-x-0 bottom-6 md:bottom-9">
           <div class="container mx-auto px-5 md:px-8">
             <div class="mb-4 flex flex-wrap items-center gap-2">
               <span class="inline-flex items-center gap-1.5 rounded-full border border-white/[0.16] bg-black/50 px-3 py-1.5 text-sm text-foreground">
@@ -540,7 +540,7 @@ function selectSource(index: number) {
           class="mx-auto max-w-[760px]"
           aria-labelledby="answer-heading"
         >
-          <div class="mb-5 mt-6 flex items-center gap-3 md:mt-11">
+          <div class="mb-5 mt-2 flex items-center gap-3 md:mt-11">
             <span
               aria-hidden="true"
               class="h-0.5 w-6 rounded bg-gradient-accent"
