@@ -1,5 +1,4 @@
-// Thin streaming controller: read the body, hand off to the askStream use case.
-// The NDJSON protocol, retrieval and generation all live in answerQuestion.ts.
+// Thin controller: read the body, hand off to askStream.
 export default defineEventHandler(async (event) => {
     const body = await readBody(event)
     const question = body?.question

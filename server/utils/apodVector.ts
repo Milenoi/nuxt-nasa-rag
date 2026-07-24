@@ -1,9 +1,7 @@
 import { embed } from './embed'
 
-// Shared by both ingest paths (batch backfill + daily top-up): turn a raw APOD
-// entry into an upsertable Upstash record, so the mapping lives in one place.
+// Shared by both ingest paths: turn an APOD entry into an Upstash record.
 
-// The NASA APOD fields we use.
 export interface ApodEntry {
     date: string
     title: string
@@ -13,12 +11,11 @@ export interface ApodEntry {
     thumbnail_url?: string
 }
 
-// Usable = has explanation text and is an image or video.
 export function isUsableApod(entry: ApodEntry): boolean {
     return Boolean(entry.explanation) && (entry.media_type === 'image' || entry.media_type === 'video')
 }
 
-// What we store per vector. The index signature satisfies Upstash's `Dict`.
+// Index signature satisfies Upstash's `Dict`.
 export interface ApodMetadata {
     [key: string]: unknown
     date: string
@@ -29,8 +26,7 @@ export interface ApodMetadata {
     thumbnailUrl: string
 }
 
-// Embed + build the record (id = date, so upserts are idempotent per day). embed
-// is injected so the backfill can pass its retrying variant.
+// embed is injected so the backfill can pass its retrying variant.
 export async function toVectorItem(
     entry: ApodEntry,
     embedFn: (text: string) => Promise<number[]> = embed

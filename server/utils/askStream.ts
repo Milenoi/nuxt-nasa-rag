@@ -1,7 +1,5 @@
-// The streamed NDJSON protocol for /api/ask, kept apart from the RAG steps
-// (retrieveSources / streamAnswer, auto-imported from answerQuestion.ts): sources
-// first, then the answer token by token, or an empty/offtopic marker. The
-// NO_MATCH sentinel is held back until ruled out, so it never reaches the client.
+// NDJSON stream for /api/ask: meta (sources), then answer deltas, or empty/offtopic.
+// NO_MATCH is buffered until ruled out so it never reaches the client.
 export function askStream(question: string, threshold: number): ReadableStream {
     const encoder = new TextEncoder()
     const line = (obj: unknown) => encoder.encode(JSON.stringify(obj) + '\n')
@@ -24,7 +22,7 @@ export function askStream(question: string, threshold: number): ReadableStream {
                             controller.enqueue(line({ type: 'offtopic' }))
                             return controller.close()
                         }
-                        if (seen.length < 8) continue // not enough to rule out NO_MATCH yet
+                        if (seen.length < 8) continue
                         decided = true
                         controller.enqueue(line({ type: 'delta', text: buffer }))
                         buffer = ''
