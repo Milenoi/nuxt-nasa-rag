@@ -23,7 +23,7 @@ const goHome = () => clearError({ redirect: '/' })
         variant="cool"
         size="clamp(260px, 30vw, 400px)"
       >
-        <span class="code-glyph font-serif text-[clamp(48px,10vw,88px)] font-light leading-none tracking-tight text-text-strong">
+        <span class="code-glyph font-serif text-[clamp(48px,11vw,120px)] font-light leading-none tracking-tight text-text-strong">
           {{ code }}
         </span>
       </BlackHole>
