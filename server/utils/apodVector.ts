@@ -1,11 +1,9 @@
 import { embed } from './embed'
 
-// Shared core of both ingest paths: the batch backfill (scripts/ingest.ts) and
-// the daily top-up (netlify/functions/daily-ingest.mts) turn a raw APOD entry
-// into an upsertable Upstash record here, so the embed step and the metadata
-// mapping live in exactly one place.
+// Shared by both ingest paths (batch backfill + daily top-up): turn a raw APOD
+// entry into an upsertable Upstash record, so the mapping lives in one place.
 
-// The subset of NASA APOD fields we use.
+// The NASA APOD fields we use.
 export interface ApodEntry {
     date: string
     title: string
@@ -15,20 +13,13 @@ export interface ApodEntry {
     thumbnail_url?: string
 }
 
-// Usable if we can ground on it (has explanation text) and show it (image/video).
+// Usable = has explanation text and is an image or video.
 export function isUsableApod(entry: ApodEntry): boolean {
     return Boolean(entry.explanation) && (entry.media_type === 'image' || entry.media_type === 'video')
 }
 
-// Embed the explanation and build the Upstash record (id = date, so upserts are
-// idempotent per day). The embed function is injected, so the backfill can pass
-// a retrying variant while the daily job uses the plain one.
-// What we store per vector and read back at query time. Used on both sides
-// (ingest writes it, ask.post types the query result with it) so they can't
-// drift apart.
+// What we store per vector. The index signature satisfies Upstash's `Dict`.
 export interface ApodMetadata {
-    // Index signature so this satisfies Upstash's `Dict` metadata constraint on
-    // upsert + query; the concrete fields below stay typed.
     [key: string]: unknown
     date: string
     title: string
@@ -38,6 +29,8 @@ export interface ApodMetadata {
     thumbnailUrl: string
 }
 
+// Embed + build the record (id = date, so upserts are idempotent per day). embed
+// is injected so the backfill can pass its retrying variant.
 export async function toVectorItem(
     entry: ApodEntry,
     embedFn: (text: string) => Promise<number[]> = embed

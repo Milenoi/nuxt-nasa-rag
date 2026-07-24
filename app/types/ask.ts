@@ -1,6 +1,6 @@
-// Shapes shared across the Ask page, its composable, and its components.
+// Types for the Ask page.
 
-// One retrieved APOD source, as the /api/ask route returns it.
+// A retrieved APOD source from /api/ask.
 export type Source = {
   date: string
   title: string
@@ -11,7 +11,7 @@ export type Source = {
   thumbnailUrl?: string
 }
 
-// The full /api/ask response.
+// The /api/ask response.
 export type AskResponse = {
   question: string
   answer: string
