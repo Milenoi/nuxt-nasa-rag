@@ -27,8 +27,8 @@ export async function retrieveSources(question: string, threshold: number) {
     return { sources, strong, topScore: sources[0]?.score ?? 0 }
 }
 
-// Stream a grounded answer. Replies NO_MATCH when the sources don't cover it.
-export async function* streamAnswer(question: string, strong: { title: string; date: string; explanation: string }[]) {
+// Generate a grounded answer. Returns NO_MATCH when the sources don't cover it.
+export async function generateAnswer(question: string, strong: { title: string; date: string; explanation: string }[]) {
     const context = strong.map((r) => `${r.title} (${r.date})\n${r.explanation}`).join('\n\n')
     const prompt = `You are an astronomy assistant. Answer the user's question using ONLY the APOD descriptions below. If they do not contain the answer, reply with exactly NO_MATCH and nothing else. Otherwise keep it concise and mention which picture(s) you used. Answer in the same language as the user's question.
 
@@ -38,11 +38,9 @@ ${context}
 Question: ${question}`
 
     const ai = new GoogleGenAI({ apiKey: useRuntimeConfig().geminiApiKey })
-    const stream = await ai.models.generateContentStream({
+    const response = await ai.models.generateContent({
         model: 'gemini-flash-latest',
         contents: prompt
     })
-    for await (const chunk of stream) {
-        if (chunk.text) yield chunk.text
-    }
+    return response.text ?? ''
 }

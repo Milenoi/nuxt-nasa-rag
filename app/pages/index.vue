@@ -11,7 +11,7 @@ import Autoplay from 'embla-carousel-autoplay'
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel'
 import { Slider } from '@/components/ui/slider'
 import { ChevronDown, Play } from '@lucide/vue'
-import type { Source } from '~/types/ask'
+import type { Source, AskResponse } from '~/types/ask'
 
 const { data: content } = await useFetch('/api/content', { key: 'content' })
 const { status, timing } = useAskStatus()
@@ -53,8 +53,6 @@ const autoplayPlugins = [
 // A short, human-readable reason shown on the error screen so it's clear WHY
 // the request failed (e.g. the Gemini quota) versus genuinely finding nothing.
 const errorDetail = ref('')
-// True while the answer streams in; drives the typing cursor.
-const isStreaming = ref(false)
 // Gentle nudge when someone hits Ask with an empty field.
 const askHint = ref('')
 // Example prompts start collapsed behind a toggle so the idle screen stays calm.
@@ -158,62 +156,32 @@ async function submit() {
   timing.value = null
   heroIndex.value = 0
   answer.value = ''
-  isStreaming.value = false
   const started = performance.now()
   try {
-    const res = await fetch('/api/ask', {
+    const data = await $fetch<AskResponse>('/api/ask', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ question: q, threshold: threshold.value })
+      body: { question: q, threshold: threshold.value }
     })
     if (id !== requestId) return
-    if (!res.ok || !res.body) {
-      const e = new Error(`Request failed (${res.status})`) as Error & { statusCode?: number }
-      e.statusCode = res.status
-      throw e
-    }
     lastAskedThreshold.value = threshold.value
-
-    // Read the NDJSON stream: meta (sources) first, then the answer token by token.
-    const reader = res.body.getReader()
-    const decoder = new TextDecoder()
-    let buf = ''
-    for (;;) {
-      const { done, value } = await reader.read()
-      if (done) break
-      if (id !== requestId) return
-      buf += decoder.decode(value, { stream: true })
-      const lines = buf.split('\n')
-      buf = lines.pop() ?? ''
-      for (const raw of lines) {
-        if (!raw.trim()) continue
-        const msg = JSON.parse(raw) as { type: string; question?: string; sources?: Source[]; text?: string; message?: string }
-        if (msg.type === 'meta') {
-          queryEcho.value = msg.question ?? q
-          sources.value = msg.sources ?? []
-        } else if (msg.type === 'empty' || msg.type === 'offtopic') {
-          answer.value = ''
-          sources.value = []
-          emptyOffTopic.value = msg.type === 'offtopic'
-          status.value = 'empty'
-          announce(a11y.value?.noResults ?? '', emptyHeading)
-        } else if (msg.type === 'delta') {
-          if (!isStreaming.value) {
-            isStreaming.value = true
-            status.value = 'answer'
-            announce(a11y.value?.answerReady ?? '', answerHeading)
-          }
-          answer.value += msg.text ?? ''
-        } else if (msg.type === 'error') {
-          throw new Error(msg.message ?? 'stream error')
-        }
-      }
-    }
-    isStreaming.value = false
+    queryEcho.value = data.question || q
     timing.value = `${((performance.now() - started) / 1000).toFixed(2)} s`
+
+    if (data.answer) {
+      // A grounded answer came back: show it with its sources.
+      sources.value = data.sources ?? []
+      answer.value = data.answer
+      status.value = 'answer'
+      announce(a11y.value?.answerReady ?? '', answerHeading)
+    } else {
+      // Nothing above the threshold, or the model ruled the question off-topic.
+      sources.value = []
+      emptyOffTopic.value = Boolean(data.offTopic)
+      status.value = 'empty'
+      announce(a11y.value?.noResults ?? '', emptyHeading)
+    }
   } catch (err) {
     if (id !== requestId) return
-    isStreaming.value = false
     timing.value = null
     errorDetail.value = describeError(err)
     status.value = 'error'
@@ -234,7 +202,6 @@ function clearLocal() {
   heroIndex.value = 0
   errorDetail.value = ''
   emptyOffTopic.value = false
-  isStreaming.value = false
   liveMessage.value = ''
 }
 
@@ -603,7 +570,7 @@ function selectSource(index: number) {
           </p>
           <!-- Rendered from our own grounded LLM output, not user input. -->
           <!-- eslint-disable-next-line vue/no-v-html -->
-          <div v-else class="answer-prose" :class="{ 'is-streaming': isStreaming }" v-html="answerHtml" />
+          <div v-else class="answer-prose" v-html="answerHtml" />
         </section>
 
         <!-- Sources -->
@@ -877,23 +844,6 @@ function selectSource(index: number) {
 }
 .answer-prose :deep(a:hover) {
   color: #fff;
-}
-
-/* Soft typing cursor at the end of the last paragraph while streaming. */
-.answer-prose.is-streaming :deep(p:last-of-type)::after {
-  content: '';
-  display: inline-block;
-  width: 0.5ch;
-  height: 1em;
-  margin-left: 3px;
-  vertical-align: text-bottom;
-  background: var(--accent-cyan);
-  border-radius: 1px;
-  animation: cursorPulse 1.1s ease-in-out infinite;
-}
-@keyframes cursorPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.2; }
 }
 
 /* Hero image swap: the newly clicked source slides up over the previous one. */
