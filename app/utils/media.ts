@@ -24,5 +24,6 @@ export function cardGradient(i: number): string {
 // is `string | Event`; only the Event carries a DOM target.
 export function hideBrokenImage(event: Event | string) {
   if (typeof event === 'string') return
-  ;(event.target as HTMLElement).style.display = 'none'
+  const target = event.target
+  if (target instanceof HTMLElement) target.style.display = 'none'
 }

@@ -3,7 +3,7 @@
 export function describeError(err: unknown): string {
   const e = err as { statusCode?: number; data?: unknown; message?: string }
   const raw = `${JSON.stringify(e?.data ?? '')} ${e?.message ?? ''}`
-  if (e?.statusCode === 429 || raw.includes('429') || /quota|rate.?limit|exceeded/i.test(raw)) {
+  if (e?.statusCode === 429 || /\b429\b/.test(raw) || /quota|rate.?limit|exceeded/i.test(raw)) {
     return "Gemini's free-tier limit is reached. It resets on its own, try again in a bit."
   }
   if (e?.statusCode) {

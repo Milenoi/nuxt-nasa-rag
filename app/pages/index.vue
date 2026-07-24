@@ -63,6 +63,9 @@ const noDirectAnswer = ref(false)
 // Gemini's own in-character one-liner for the nonsense / noAnswer states; shown in
 // place of the static fallback copy when present.
 const remark = ref('')
+// The personality mode the current result was fetched with, so the fallback copy's
+// tone doesn't flip if the toggle is changed while an empty screen is showing.
+const lastStarTrek = ref(false)
 // Star Trek personality toggle (idle screen). On: Gemini adds in-character remarks
 // and a warm opener; off: cool, factual, straight from the sources. Synced to
 // `?st=` (shareable) and remembered in localStorage.
@@ -104,12 +107,14 @@ watch(answer, async (md) => {
     answerHtml.value = ''
     return
   }
-  const html = marked.parse(md) as string
+  const html = marked.parse(md, { async: false })
   if (import.meta.client) {
     const { default: DOMPurify } = await import('dompurify')
     answerHtml.value = DOMPurify.sanitize(html)
   } else {
-    answerHtml.value = html
+    // SSR: never inject unsanitized HTML. `answer` is only set client-side today;
+    // if that ever changes, this stays safe (empty) rather than leaking markup.
+    answerHtml.value = ''
   }
 })
 
@@ -122,14 +127,17 @@ const heroCardLabel = (title: string) =>
   (answerCopy.value?.showInHero ?? '').replace('{title}', title)
 
 // Announce the new state and move focus to its heading, once the DOM has updated.
-function announce(message: string, target: { value: HTMLElement | null }) {
+function announce(message: string, target: Ref<HTMLElement | null>) {
   liveMessage.value = message
   nextTick(() => target.value?.focus())
 }
 
 // A monotonic request id: if two requests are ever in flight, only the newest is
-// allowed to write the result, a slower earlier response is discarded.
+// allowed to write the result, a slower earlier response is discarded. `disposed`
+// additionally blocks a late response from writing after the page was left, since
+// status/timing live in useAskStatus (app-wide state that outlives this component).
 let requestId = 0
+let disposed = false
 
 // Build the shareable URL query. `t` (the tolerance) is always included so the
 // link is explicit about it; `hero` is omitted at 0 (the top match).
@@ -160,11 +168,12 @@ async function submit() {
       method: 'POST',
       body: { question: q, starTrek: starTrek.value }
     })
-    if (id !== requestId) return
+    if (id !== requestId || disposed) return
     queryEcho.value = data.question || q
     timing.value = `${((performance.now() - started) / 1000).toFixed(2)} s`
 
     remark.value = data.remark ?? ''
+    lastStarTrek.value = starTrek.value
     if (data.state === 'nonsense') {
       // Gibberish: the playful black-hole screen with Gemini's own quip.
       sources.value = []
@@ -180,7 +189,7 @@ async function submit() {
       announce(a11y.value?.answerReady ?? '', answerHeading)
     }
   } catch (err) {
-    if (id !== requestId) return
+    if (id !== requestId || disposed) return
     timing.value = null
     errorDetail.value = describeError(err)
     status.value = 'error'
@@ -230,6 +239,13 @@ watch(threshold, (t) => {
     const q = typeof route.query.q === 'string' ? route.query.q : ''
     router.replace({ query: q ? shareQuery(q, heroIndex.value, t) : { t: t.toFixed(2) } })
   }, 250)
+})
+
+// On unmount: block any late response from writing shared state, and drop the
+// pending tolerance-to-URL debounce so it can't fire against another route.
+onUnmounted(() => {
+  disposed = true
+  clearTimeout(tUrlTimer)
 })
 
 // Remember the personality choice, and when a result is on screen keep it in the
@@ -490,7 +506,7 @@ function selectSource(index: number) {
             v-else-if="isVideo(heroSource)"
             :key="heroIndex"
             :src="youtubeAutoplaySrc(heroSource!.imageUrl)"
-            title=""
+            :title="heroSource?.title ?? 'APOD video'"
             allow="autoplay; encrypted-media; picture-in-picture"
             class="absolute inset-0 h-full w-full"
           />
@@ -507,7 +523,7 @@ function selectSource(index: number) {
             @error="hideBrokenImage"
           />
         </Transition>
-        <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(2,3,8,0.35)_0%,transparent_26%,rgba(2,3,8,0.55)_66%,#020308_100%)]" />
+        <div class="pointer-events-none absolute inset-0 bg-hero-scrim" />
 
         <!-- Tolerance-empty mask: when the slider filters every source out, the
              hero image no longer reflects a real match, so cover it. -->
@@ -559,7 +575,7 @@ function selectSource(index: number) {
             <h2
               ref="answerHeading"
               tabindex="-1"
-              class="max-w-[760px] font-serif text-[clamp(28px,5vw,52px)] font-light leading-[1.04] tracking-[-0.01em] text-white focus:outline-none"
+              class="max-w-[760px] font-serif text-[clamp(28px,5vw,52px)] font-light leading-[1.04] tracking-[-0.01em] text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan/50"
             >
               {{ heroIsTop ? queryEcho : heroSource?.title }}
             </h2>
@@ -676,7 +692,7 @@ function selectSource(index: number) {
             <CarouselContent class="pt-1 pb-4">
               <CarouselItem
                 v-for="item in sliderSources"
-                :key="item.src.date + item.src.title"
+                :key="`${item.src.date}|${item.src.title}`"
                 class="basis-auto"
               >
                 <div
@@ -766,12 +782,12 @@ function selectSource(index: number) {
       <h2
         ref="emptyHeading"
         tabindex="-1"
-        class="mt-8 font-serif text-[clamp(26px,4vw,36px)] font-light text-text-strong focus:outline-none"
+        class="mt-8 font-serif text-[clamp(26px,4vw,36px)] font-light text-text-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan/50"
       >
         {{ states?.emptyHeading }}
       </h2>
       <p class="mx-auto mt-3 max-w-[440px] text-base leading-relaxed text-text-muted">
-        {{ remark || (starTrek ? states?.nonsense : states?.nonsensePlain) }}
+        {{ remark || (lastStarTrek ? states?.nonsense : states?.nonsensePlain) }}
       </p>
       <button
         type="button"
@@ -794,7 +810,7 @@ function selectSource(index: number) {
       <h2
         ref="errorHeading"
         tabindex="-1"
-        class="mt-6 font-serif text-[clamp(26px,4vw,36px)] font-light text-text-warm focus:outline-none"
+        class="mt-6 font-serif text-[clamp(26px,4vw,36px)] font-light text-text-warm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan/50"
       >
         {{ states?.errorHeading }}
       </h2>
