@@ -11,23 +11,7 @@ import Autoplay from 'embla-carousel-autoplay'
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel'
 import { Slider } from '@/components/ui/slider'
 import { ChevronDown, Play } from '@lucide/vue'
-
-type Source = {
-  date: string
-  title: string
-  imageUrl: string
-  explanation: string
-  score: number
-  mediaType?: 'image' | 'video'
-  thumbnailUrl?: string
-}
-type AskResponse = {
-  question: string
-  answer: string
-  sources: Source[]
-  topScore?: number
-  threshold?: number
-}
+import type { Source, AskResponse } from '~/types/ask'
 
 const { data: content } = await useFetch('/api/content', { key: 'content' })
 const { status, timing } = useAskStatus()
@@ -208,21 +192,6 @@ async function submit() {
   }
 }
 
-// Turn a thrown fetch error into a short, readable reason. The Gemini quota
-// (HTTP 429) is the common one on the free tier, so it's called out explicitly,
-// preferring the structured status code, with a string check as a fallback.
-function describeError(err: unknown): string {
-  const e = err as { statusCode?: number; statusMessage?: string; data?: unknown; message?: string }
-  const raw = `${JSON.stringify(e?.data ?? '')} ${e?.message ?? ''}`
-  if (e?.statusCode === 429 || raw.includes('429') || /quota|rate.?limit|exceeded/i.test(raw)) {
-    return 'Gemini rate limit reached (HTTP 429). The free-tier quota is used up, it resets automatically (per-minute limits within a minute, the daily quota at midnight Pacific time).'
-  }
-  if (e?.statusCode) {
-    return `The answer service returned an error (HTTP ${e.statusCode}${e.statusMessage ? ` ${e.statusMessage}` : ''}).`
-  }
-  return 'Could not reach the answer service. Check your connection and try again.'
-}
-
 function useExample(example: string) {
   query.value = example
   submit()
@@ -337,33 +306,6 @@ function selectSource(index: number) {
   }
 }
 
-// A colourful gradient stands in behind each image (and shows through if the
-// image fails to load), varied per card so the row never looks flat.
-function cardGradient(i: number) {
-  const h = (i * 47 + 200) % 360
-  return `radial-gradient(120% 120% at 28% 18%, hsl(${h} 72% 56% / .5), transparent 46%), radial-gradient(90% 90% at 82% 84%, hsl(${(h + 45) % 360} 76% 46% / .42), transparent 52%), #04060b`
-}
-
-// Hide a broken image so the gradient placeholder underneath shows instead.
-// NuxtPicture types its error payload as `string | Event`; only the Event form
-// carries a DOM target to hide.
-function hideBrokenImage(event: Event | string) {
-  if (typeof event === 'string') return
-  ;(event.target as HTMLElement).style.display = 'none'
-}
-
-// APOD videos come in two shapes: a direct .mp4 hosted by NASA, or a YouTube
-// embed URL. We autoplay them muted + looping in the hero.
-const isVideo = (src?: Source) => src?.mediaType === 'video'
-const isFileVideo = (url?: string) => /\.(mp4|webm|ogg)(\?|$)/i.test(url ?? '')
-// Build an autoplaying, muted, looping YouTube embed (loop needs playlist=<id>).
-function youtubeAutoplaySrc(url: string): string {
-  const id = url.match(/embed\/([^?&/]+)/)?.[1]
-  if (!id) return url
-  return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&playsinline=1&loop=1&playlist=${id}&controls=0&rel=0`
-}
-// Card preview: video thumbnail if we have one, else fall through to the gradient.
-const cardImage = (src: Source) => (isVideo(src) ? src.thumbnailUrl : src.imageUrl)
 </script>
 
 <template>
@@ -525,7 +467,7 @@ const cardImage = (src: Source) => (isVideo(src) ? src.thumbnailUrl : src.imageU
             :key="heroIndex"
             :src="heroSource.imageUrl"
             :alt="heroSource.title"
-            sizes="100vw"
+            sizes="600px sm:960px md:1280px lg:1600px xl:1920px"
             class="absolute inset-0"
             :img-attrs="{ class: 'h-full w-full object-cover' }"
             @error="hideBrokenImage"
@@ -598,7 +540,7 @@ const cardImage = (src: Source) => (isVideo(src) ? src.thumbnailUrl : src.imageU
           class="mx-auto max-w-[760px]"
           aria-labelledby="answer-heading"
         >
-          <div class="mb-5 mt-11 flex items-center gap-3">
+          <div class="mb-5 mt-6 flex items-center gap-3 md:mt-11">
             <span
               aria-hidden="true"
               class="h-0.5 w-6 rounded bg-gradient-accent"
@@ -823,14 +765,12 @@ const cardImage = (src: Source) => (isVideo(src) ? src.thumbnailUrl : src.imageU
       >
         {{ states?.errorHeading }}
       </h2>
-      <p class="mx-auto mt-3 max-w-[430px] text-base leading-relaxed text-text-warm-muted">
-        {{ states?.error }}
-      </p>
-      <!-- The concrete technical reason, so it's clear the API failed (vs. an
-           empty result). -->
+      <!-- One concise reason (from describeError), so it's clear the request
+           actually failed (vs. an empty result). We drop the generic "something
+           went wrong" line above it, since it only doubled the message. -->
       <p
         v-if="errorDetail"
-        class="mx-auto mt-4 max-w-[460px] rounded-lg border border-destructive/25 bg-destructive/10 px-4 py-2.5 font-mono text-xs leading-relaxed text-destructive"
+        class="mx-auto mt-6 max-w-[420px] rounded-lg border border-destructive/25 bg-destructive/10 px-4 py-2.5 font-mono text-xs leading-relaxed text-destructive"
       >
         {{ errorDetail }}
       </p>
