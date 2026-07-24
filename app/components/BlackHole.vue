@@ -3,9 +3,12 @@
 // a soft halo. Used for the "no result" (cool) and "error" (warm) states, and
 // reused on the 404 page (with "404" in the default slot). Decorative.
 const props = withDefaults(
-  defineProps<{ variant?: 'cool' | 'warm'; size?: number }>(),
+  defineProps<{ variant?: 'cool' | 'warm'; size?: number | string }>(),
   { variant: 'cool', size: 300 }
 )
+
+// A number is treated as px; a string (e.g. a clamp()) is used verbatim.
+const dimension = computed(() => (typeof props.size === 'number' ? `${props.size}px` : props.size))
 
 const glow = computed(() =>
   props.variant === 'warm'
@@ -23,7 +26,7 @@ const glow = computed(() =>
 <template>
   <div
     class="relative mx-auto [animation:floaty_9s_ease-in-out_infinite]"
-    :style="{ width: `${size}px`, height: `${size}px` }"
+    :style="{ width: dimension, height: dimension }"
   >
     <!-- soft outer halo (decorative); only the glow colour is dynamic -->
     <div
