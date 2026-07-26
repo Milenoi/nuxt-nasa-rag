@@ -29,6 +29,7 @@ const ask = computed(() => content.value?.ask)
 const answerCopy = computed(() => content.value?.answer)
 const states = computed(() => content.value?.states)
 const a11y = computed(() => content.value?.a11y)
+const suggest = computed(() => content.value?.suggest)
 
 const query = ref('')
 const queryEcho = ref('')
@@ -70,9 +71,16 @@ const lastStarTrek = ref(false)
 // and a warm opener; off: cool, factual, straight from the sources. Synced to
 // `?st=` (shareable) and remembered in localStorage.
 const starTrek = ref(false)
-// Smart-search toggle (idle screen): rewrite the query (fix typos, tighten wording)
-// before searching. Synced to `?rw=` + localStorage. Default off.
+// Smart-search toggle (idle screen): when on, the raw question goes to /api/suggest
+// first and the user picks a cleaned-up version before the search runs. Synced to
+// `?rw=` + localStorage. Default off.
 const rewrite = ref(false)
+// The "did you mean?" step, local to this view (the shared AskStatus stays 'idle'
+// until a real search starts): `suggesting` while /api/suggest runs, then the
+// returned alternatives to pick from.
+const suggesting = ref(false)
+const suggestions = ref<string[]>([])
+const showIdle = computed(() => status.value === 'idle' && !suggesting.value && suggestions.value.length === 0)
 // Which source is shown big in the hero. 0 = the top match (the answer hero);
 // clicking another source card swaps the hero to that picture.
 const heroIndex = ref(0)
@@ -142,24 +150,25 @@ function announce(message: string, target: Ref<HTMLElement | null>) {
 let requestId = 0
 let disposed = false
 
-// Build the shareable URL query. `t` (the tolerance) is always included so the
-// link is explicit about it; `hero` is omitted at 0 (the top match).
-function shareQuery(q: string, hero: number, tol: number): Record<string, string> {
-  const query: Record<string, string> = { q, t: tol.toFixed(2), st: starTrek.value ? '1' : '0', rw: rewrite.value ? '1' : '0' }
-  if (hero > 0) query.hero = String(hero)
-  return query
+// Feed the page's reactive toggles into the pure shareQuery builder, so callers
+// only pass what varies (question, hero, tolerance).
+function linkQuery(q: string, hero: number, tol: number): Record<string, string> {
+  return shareQuery({ q, hero, tolerance: tol, starTrek: starTrek.value, rewrite: rewrite.value })
 }
 
-async function submit() {
-  const q = query.value.trim()
+async function runSearch(rawQuery: string) {
+  const q = rawQuery.trim()
   if (!q) {
     askHint.value = ask.value?.emptyHint ?? 'Please ask something first.'
     return
   }
+  // Keep the field and any open suggestion panel in sync with what we search.
+  query.value = q
+  suggestions.value = []
   askHint.value = ''
   // Reflect the query + tolerance in the URL so the result is shareable.
   // (heroIndex resets to 0 just below, so a fresh ask carries no hero param.)
-  router.replace({ query: shareQuery(q, 0, threshold.value) })
+  router.replace({ query: linkQuery(q, 0, threshold.value) })
   const id = ++requestId
   status.value = 'loading'
   timing.value = null
@@ -169,7 +178,7 @@ async function submit() {
   try {
     const data = await $fetch<AskResponse>('/api/ask', {
       method: 'POST',
-      body: { question: q, starTrek: starTrek.value, rewrite: rewrite.value }
+      body: { question: q, starTrek: starTrek.value }
     })
     if (id !== requestId || disposed) return
     queryEcho.value = data.question || q
@@ -200,9 +209,52 @@ async function submit() {
   }
 }
 
+// The Ask button. Smart search off: search straight away. On: fetch cleaned-up
+// alternatives first; show them if there are any, otherwise just search.
+async function onAsk() {
+  const q = query.value.trim()
+  if (!q) {
+    askHint.value = ask.value?.emptyHint ?? 'Please ask something first.'
+    return
+  }
+  if (!rewrite.value) {
+    runSearch(q)
+    return
+  }
+  askHint.value = ''
+  suggesting.value = true
+  try {
+    const data = await $fetch<{ suggestions: string[] }>('/api/suggest', {
+      method: 'POST',
+      body: { question: q }
+    })
+    suggesting.value = false
+    if (data.suggestions?.length) {
+      suggestions.value = data.suggestions
+      liveMessage.value = a11y.value?.suggestionsReady ?? ''
+    } else {
+      // Nothing cleaner to offer, just search the original.
+      runSearch(q)
+    }
+  } catch {
+    // Suggestion step failed (e.g. quota): fall back to a normal search, which
+    // surfaces the real error itself if /api/ask fails too.
+    suggesting.value = false
+    runSearch(q)
+  }
+}
+
+function chooseSuggestion(q: string) {
+  runSearch(q)
+}
+
+function keepOriginal() {
+  runSearch(query.value)
+}
+
+// Examples are already clean questions, so they skip the suggestion step.
 function useExample(example: string) {
-  query.value = example
-  submit()
+  runSearch(example)
 }
 
 function clearLocal() {
@@ -215,6 +267,8 @@ function clearLocal() {
   noDirectAnswer.value = false
   remark.value = ''
   liveMessage.value = ''
+  suggestions.value = []
+  suggesting.value = false
 }
 
 function reset() {
@@ -233,6 +287,22 @@ watch(status, (value) => {
   }
 })
 
+// React to the browser's own navigation (back / forward, or an edited URL).
+// onMounted only fires on the first mount, so without this a back after a search
+// changes the URL but leaves the old result on screen. We watch ONLY `q`: our own
+// replaces for the slider / toggles / hero change t/st/rw/hero, never q, so they
+// don't retrigger this. An equal (trimmed) value means it was our own submit
+// writing the URL, so we ignore it and never double-fetch.
+watch(() => route.query.q, (raw) => {
+  const q = typeof raw === 'string' ? raw : ''
+  if (q === query.value.trim()) return
+  if (q.trim()) {
+    runSearch(q)
+  } else {
+    reset()
+  }
+})
+
 // Keep the tolerance live in the URL as the slider moves (debounced, so it isn't
 // replaced on every pixel). Carries the question + hero when there's a result.
 let tUrlTimer: ReturnType<typeof setTimeout> | undefined
@@ -240,7 +310,7 @@ watch(threshold, (t) => {
   clearTimeout(tUrlTimer)
   tUrlTimer = setTimeout(() => {
     const q = typeof route.query.q === 'string' ? route.query.q : ''
-    router.replace({ query: q ? shareQuery(q, heroIndex.value, t) : { t: t.toFixed(2) } })
+    router.replace({ query: q ? linkQuery(q, heroIndex.value, t) : { t: t.toFixed(2) } })
   }, 250)
 })
 
@@ -259,7 +329,7 @@ watch([starTrek, rewrite], () => {
     localStorage.setItem('apod-rewrite', rewrite.value ? '1' : '0')
   }
   const q = typeof route.query.q === 'string' ? route.query.q : ''
-  if (q) router.replace({ query: shareQuery(q, heroIndex.value, threshold.value) })
+  if (q) router.replace({ query: linkQuery(q, heroIndex.value, threshold.value) })
 })
 
 // `status` is shared state that outlives this page, but the answer/sources data
@@ -293,12 +363,11 @@ onMounted(async () => {
     if (stored === '0' || stored === '1') rewrite.value = stored === '1'
   }
   if (typeof shared === 'string' && shared.trim()) {
-    query.value = shared
-    await submit()
+    await runSearch(shared)
     const h = Number(heroParam)
     if (Number.isInteger(h) && h > 0 && h < sources.value.length) {
       heroIndex.value = h
-      router.replace({ query: shareQuery(shared, h, threshold.value) })
+      router.replace({ query: linkQuery(shared, h, threshold.value) })
     }
   } else if (status.value !== 'idle') {
     reset()
@@ -352,7 +421,7 @@ function selectSource(index: number) {
   // Reflect the featured source in the URL (omit for the top match / index 0).
   // Keep q + the current tolerance; add/drop hero.
   const q = typeof route.query.q === 'string' ? route.query.q : ''
-  router.replace({ query: shareQuery(q, index, threshold.value) })
+  router.replace({ query: linkQuery(q, index, threshold.value) })
   if (import.meta.client) {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' })
@@ -374,7 +443,7 @@ function selectSource(index: number) {
 
     <!-- ═══════════ IDLE, the hero + ask box ═══════════ -->
     <section
-      v-if="status === 'idle'"
+      v-if="showIdle"
       class="mx-auto flex min-h-[calc(100dvh-3.25rem)] max-w-[820px] flex-col px-5 pb-16 pt-28 animate-fade-up md:px-8 md:pt-[19vh]"
     >
       <p class="mb-6 text-sm text-text-faint">
@@ -389,7 +458,7 @@ function selectSource(index: number) {
 
       <form
         class="mt-10 max-w-[680px]"
-        @submit.prevent="submit"
+        @submit.prevent="onAsk"
       >
         <div class="flex flex-col gap-2 rounded-xl border border-input bg-card/85 p-2 backdrop-blur-[6px] sm:flex-row sm:items-center sm:gap-2.5 sm:py-2 sm:pl-6 sm:pr-2">
           <input
@@ -473,6 +542,24 @@ function selectSource(index: number) {
         </button>
       </div>
     </section>
+
+    <!-- ═══════════ SUGGESTING, Smart search fetching alternatives ═══════════ -->
+    <div
+      v-else-if="suggesting"
+      class="animate-fade-up flex min-h-[calc(100dvh-3.25rem)] items-center justify-center px-5"
+    >
+      <OrbitLoader :label="suggest?.loading" />
+    </div>
+
+    <!-- ═══════════ SUGGESTIONS, the "did you mean?" panel ═══════════ -->
+    <SuggestPanel
+      v-else-if="suggestions.length"
+      :question="query"
+      :suggestions="suggestions"
+      :copy="suggest"
+      @choose="chooseSuggestion"
+      @keep-original="keepOriginal"
+    />
 
     <!-- ═══════════ LOADING, the orbit spinner ═══════════ -->
     <div

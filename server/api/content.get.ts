@@ -50,7 +50,7 @@ export default defineEventHandler(() => {
       personalityLabelShort: 'Star Trek',
       personalityHint: 'On: answers get a playful Star Trek bridge-officer voice. Off: cool and factual, straight from the sources.',
       rewriteLabel: 'Smart search',
-      rewriteHint: 'Cleans up typos and vague wording before searching, so a misspelled or one-word query still finds matches. Costs one extra step.'
+      rewriteHint: 'On: suggests cleaned-up versions of your question (typos fixed, wording tightened) to pick from before searching, so a misspelled or vague query still finds matches. Off: your text is searched exactly as typed.'
     },
     answer: {
       heading: 'Answer',
@@ -73,10 +73,20 @@ export default defineEventHandler(() => {
       toleranceHint: 'Dims the weaker sources so the strong ones stand out. Updates live, no re-ask needed.',
       toleranceEmpty: 'You have dimmed every source. Ease the slider back down.'
     },
+    // The "did you mean?" step shown when Smart search returns cleaned-up
+    // alternatives for the user to pick from before the actual search runs.
+    suggest: {
+      askedLabel: 'You asked',
+      heading: 'Did you mean?',
+      intro: 'Smart search tidied up your question. Pick a version, or search exactly what you typed.',
+      keepOriginal: 'No, search what I typed',
+      loading: 'Tidying up your wording…'
+    },
     a11y: {
       answerReady: 'Answer ready.',
       noResults: 'No matching results found.',
-      requestError: 'The request failed.'
+      requestError: 'The request failed.',
+      suggestionsReady: 'Suggestions ready. Pick one, or keep your original.'
     },
     states: {
       emptyHeading: 'Nothing crossed the event horizon.',
@@ -96,7 +106,7 @@ export default defineEventHandler(() => {
           role: 'Query',
           color: 'cyan',
           name: 'Embed the question',
-          desc: "Your question is turned into a list of 768 numbers (a vector) by Google's multilingual Gemini embedding model. The same model already turned every APOD description into a vector, so a German question can still find an English text. Meaning becomes math the computer can compare. (With Smart search on, the question is cleaned up first, typos fixed, so a misspelled search still lands.)"
+          desc: "Your question is turned into a list of 768 numbers (a vector) by Google's multilingual Gemini embedding model. The same model already turned every APOD description into a vector, so a German question can still find an English text. Meaning becomes math the computer can compare. (With Smart search on, you first pick from cleaned-up versions of your question, typos fixed, before this step.)"
         },
         {
           role: 'Retrieve',

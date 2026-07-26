@@ -1,21 +1,24 @@
 import { GoogleGenAI } from '@google/genai'
-import type { QueryRewriter } from '../usecases/ports'
+import type { QuerySuggester } from '../usecases/ports'
 
-// QueryRewriter adapter for Gemini: turns the raw question into a tighter search
-// query (fix typos + spelling, keep the meaning) before it is embedded. Falls back
-// to the original if the model returns nothing usable.
-export function geminiQueryRewriter(apiKey: string): QueryRewriter {
+// QuerySuggester adapter for Gemini: proposes corrected astronomy search queries
+// (fix typos + spelling, keep the meaning). Returns them raw, one per line parsed
+// into a list; the use case filters out the original and duplicates.
+export function geminiQuerySuggester(apiKey: string): QuerySuggester {
     const ai = new GoogleGenAI({ apiKey })
     return {
-        async rewrite(question) {
-            const prompt = `Rewrite the input into a short, clear astronomy search query: fix typos and spelling, keep the original meaning, expand only if it clearly helps retrieval. Return ONLY the rewritten query, no quotes and no explanation.
+        async suggest(question) {
+            const prompt = `Suggest up to 3 corrected astronomy search queries for the input: fix typos and spelling, keep the original meaning, expand only if it clearly helps retrieval. One per line, no numbering, no quotes, no explanation. If the input is already a clean query, return nothing.
 
 Input: ${question}`
             const response = await ai.models.generateContent({
                 model: 'gemini-flash-latest',
                 contents: prompt
             })
-            return (response.text ?? '').trim() || question
+            return (response.text ?? '')
+                .split('\n')
+                .map((line) => line.trim())
+                .filter(Boolean)
         }
     }
 }

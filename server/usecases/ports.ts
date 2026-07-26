@@ -19,8 +19,8 @@ export interface LanguageModel {
     generate(prompt: string): Promise<string>
 }
 
-// Rewrites a raw question into a cleaner search query (fixes typos, tightens
-// vague wording) before it is embedded.
-export interface QueryRewriter {
-    rewrite(question: string): Promise<string>
+// Suggests corrected search queries (fix typos, tighten vague wording) for the
+// user to pick from before one is embedded.
+export interface QuerySuggester {
+    suggest(question: string): Promise<string[]>
 }

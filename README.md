@@ -20,11 +20,11 @@ things up. If the texts don't cover an otherwise real question, it shows the clo
 pictures instead of guessing; if the input is just gibberish, it says so and stops.
 The pictures behind an answer are always shown as sources.
 
-Two toggles on the start screen: **Smart search** rewrites your query before searching
-(fixes typos and vague wording, so a misspelled or one-word query still finds matches),
-and a **Star Trek toggle** gives the answer a playful in-character voice (off = cool and
-factual). On the results view, a **relevance slider** dims the weaker sources. All sync
-to the URL for sharing.
+Two toggles on the start screen: **Smart search** suggests cleaned-up versions of your
+question (typos fixed, wording tightened) to pick from before searching, so a misspelled
+or vague query still finds matches, and a **Star Trek toggle** gives the answer a playful
+in-character voice (off = cool and factual). On the results view, a **relevance slider**
+dims the weaker sources. All sync to the URL for sharing.
 
 ## Tech
 
@@ -45,12 +45,14 @@ The query path follows a clean-architecture split, so the core does not depend o
 specific tech:
 
 - **`server/domain/`** plain types (the entities).
-- **`server/usecases/`** the `resolveQuestion` use case plus the ports it needs, an
-  `Embedder`, a `VectorStore` and a `LanguageModel`.
+- **`server/usecases/`** the `resolveQuestion` and `suggestQueries` use cases plus the
+  ports they need, an `Embedder`, a `VectorStore`, a `LanguageModel` and a
+  `QuerySuggester`.
 - **`server/infrastructure/`** the adapters that fulfil those ports (Gemini, Upstash),
   plus a small `config.ts` that reads the keys once and injects them.
-- **`server/api/ask.post.ts`** a thin controller that wires the adapters into the use
-  case (the composition root).
+- **`server/api/ask.post.ts`** and **`server/api/suggest.post.ts`** thin controllers that
+  wire the adapters into a use case (the composition roots): `ask` for the grounded
+  answer, `suggest` for the optional "did you mean?" step.
 
 Swapping Gemini for another model, or Upstash for another store, means writing one new
 adapter, the core stays untouched, and the use case is testable with fake adapters (no
@@ -68,7 +70,7 @@ npm run ingest   # build/refresh the vector store, then restart dev
 The ingest is resumable and safe to re-run: it skips days already stored and works
 in small batches with pauses, so hitting the daily Gemini quota never loses a whole
 run. A daily top-up (`netlify/functions/daily-ingest.mts`) adds each new APOD day on
-its own; its cron is commented out until the historical backfill is complete.
+its own, on a daily cron (`0 8 * * *`).
 
 ## Environment variables
 
