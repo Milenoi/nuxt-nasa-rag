@@ -33,6 +33,11 @@ const stages = computed(() =>
   }))
 )
 
+// Idle: instead of four static grey dots, a soft cyan glow travels the pipeline
+// (see the scoped .pipeline-wave animation). Any active status drops back to the
+// colorMap above.
+const isIdle = computed(() => status.value === 'idle')
+
 // Right-hand timing text: idle label when idle, "- -" while loading, else the
 // measured timing.
 const timingText = computed(() => {
@@ -85,8 +90,9 @@ const mobileStatus = computed(() => ({
           >→</span>
           <span class="inline-flex items-center gap-1.5">
             <span
-              class="size-[7px] rounded-full transition-colors"
-              :style="{ background: stage.color, boxShadow: `0 0 8px 1px ${stage.color}55` }"
+              class="size-[7px] rounded-full"
+              :class="isIdle ? 'pipeline-wave' : 'transition-colors'"
+              :style="isIdle ? { '--i': i } : { background: stage.color, boxShadow: `0 0 8px 1px ${stage.color}55` }"
             />
             <span class="hidden sm:inline">{{ stage.label }}</span>
           </span>
@@ -101,3 +107,32 @@ const mobileStatus = computed(() => ({
     </div>
   </footer>
 </template>
+
+<style scoped>
+/* Idle pipeline: a soft cyan glow travels the four dots and back, the dots just
+   behind the active one still glimmering (a comet tail). Pure CSS, staggered
+   animation-delay per dot (--i) over a 2.4s cycle; no JS timer. */
+.pipeline-wave {
+  background: var(--pipeline-idle);
+  animation: pipeline-wave 2.4s ease-in-out infinite;
+  animation-delay: calc(var(--i) * 0.6s);
+}
+
+@keyframes pipeline-wave {
+  0% {
+    background: var(--accent-cyan);
+    box-shadow: 0 0 8px 1px color-mix(in srgb, var(--accent-cyan) 45%, transparent);
+  }
+  50%,
+  100% {
+    background: var(--pipeline-idle);
+    box-shadow: 0 0 8px 1px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pipeline-wave {
+    animation: none;
+  }
+}
+</style>
