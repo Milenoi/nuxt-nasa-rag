@@ -24,8 +24,7 @@ The pictures behind an answer are always shown as sources.
 Two toggles on the start screen: **Smart search** suggests cleaned-up versions of your
 question (typos fixed, wording tightened) to pick from before searching, so a misspelled
 or vague query still finds matches, and a **Star Trek toggle** gives the answer a playful
-in-character voice (off = cool and factual). On the results view, a **relevance slider**
-dims the weaker sources. All sync to the URL for sharing.
+in-character voice (off = cool and factual). Both sync to the URL for sharing.
 
 ## Tech
 

@@ -40,7 +40,7 @@ const sources = ref<Source[]>([])
 // we can re-measure and jump back to the start after a hero swap changes the row.
 const carouselApi = ref<CarouselApi>()
 // Whether the arrows can still page in each direction, kept in sync with Embla's
-// own scroll state so the buttons disable at the ends, like the old slider did.
+// own scroll state so the buttons disable at the ends.
 const canScrollPrev = ref(false)
 const canScrollNext = ref(false)
 // Autoplay pages the row gently. stopOnMouseEnter pauses it while the pointer is over
@@ -272,7 +272,7 @@ watch(status, (value) => {
 // React to the browser's own navigation (back / forward, or an edited URL).
 // onMounted only fires on the first mount, so without this a back after a search
 // changes the URL but leaves the old result on screen. We watch ONLY `q`: our own
-// replaces for the slider / toggles / hero change t/st/rw/hero, never q, so they
+// replaces for the toggles / hero change st/rw/hero, never q, so they
 // don't retrigger this. An equal (trimmed) value means it was our own submit
 // writing the URL, so we ignore it and never double-fetch.
 watch(() => route.query.q, (raw) => {
@@ -344,7 +344,7 @@ watch(query, () => {
 
 // The carousel shows every source EXCEPT the one currently in the hero; clicking
 // a card promotes it, and the previously featured match drops back into the row.
-const sliderSources = computed(() =>
+const carouselSources = computed(() =>
   sources.value
     .map((src, index) => ({ src, index }))
     .filter((item) => item.index !== heroIndex.value)
@@ -371,7 +371,7 @@ function onCarouselInit(api: CarouselApi) {
 
 // Promoting a card into the hero changes which cards the row holds, so Embla has to
 // re-measure and snap back to the first card.
-watch(sliderSources, async () => {
+watch(carouselSources, async () => {
   await nextTick()
   carouselApi.value?.reInit()
   carouselApi.value?.scrollTo(0, true)
@@ -702,7 +702,7 @@ function selectSource(index: number) {
                  hero (and the previous hero match drops back in here). -->
             <CarouselContent class="pt-1 pb-4">
               <CarouselItem
-                v-for="item in sliderSources"
+                v-for="item in carouselSources"
                 :key="`${item.src.date}|${item.src.title}`"
                 class="basis-auto"
               >
