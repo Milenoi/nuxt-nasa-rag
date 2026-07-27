@@ -12,8 +12,9 @@ export interface RetrievedSource {
     score: number
 }
 
-// What the pipeline decided about a question.
-export type AskState = 'answer' | 'noAnswer' | 'nonsense'
+// What the pipeline decided about a question: an answer built from the sources, a real
+// question the archive doesn't cover (closest matches shown), or an unusable input.
+export type AskState = 'answered' | 'outOfScope' | 'invalidInput'
 
 // The result the use case returns and the API/UI share.
 export interface AskResult {

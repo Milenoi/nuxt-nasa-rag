@@ -186,7 +186,7 @@ async function runSearch(rawQuery: string) {
 
     remark.value = data.remark ?? ''
     lastStarTrek.value = starTrek.value
-    if (data.state === 'nonsense') {
+    if (data.state === 'invalidInput') {
       // Gibberish: the playful black-hole screen with Gemini's own quip.
       sources.value = []
       status.value = 'empty'
@@ -196,7 +196,7 @@ async function runSearch(rawQuery: string) {
       // the AI text for a "closest matches" note.
       sources.value = data.sources ?? []
       answer.value = data.answer
-      noDirectAnswer.value = data.state === 'noAnswer'
+      noDirectAnswer.value = data.state === 'outOfScope'
       status.value = 'answer'
       announce(a11y.value?.answerReady ?? '', answerHeading)
     }

@@ -46,7 +46,7 @@ describe('resolveQuestion', () => {
             vectorStore: vectorStore([source(0.4)]),
             model: llm.model
         })
-        expect(result.state).toBe('nonsense')
+        expect(result.state).toBe('invalidInput')
         expect(result.sources).toEqual([])
         expect(llm.state.calls).toBe(0)
     })
@@ -58,7 +58,7 @@ describe('resolveQuestion', () => {
             vectorStore: vectorStore([source(0.75)]),
             model: llm.model
         })
-        expect(result.state).toBe('nonsense')
+        expect(result.state).toBe('invalidInput')
         expect(result.remark).toBe('That is a cat walking across the keyboard, captain.')
         expect(result.sources).toEqual([])
     })
@@ -70,7 +70,7 @@ describe('resolveQuestion', () => {
             vectorStore: vectorStore([source(0.7), source(0.6)]),
             model: llm.model
         })
-        expect(result.state).toBe('noAnswer')
+        expect(result.state).toBe('outOfScope')
         expect(result.sources).toHaveLength(2)
         expect(result.answer).toBe('')
         expect(result.remark).toBe('Fascinating question, here is what came closest.')
@@ -83,7 +83,7 @@ describe('resolveQuestion', () => {
             vectorStore: vectorStore([source(0.8)]),
             model: llm.model
         })
-        expect(result.state).toBe('answer')
+        expect(result.state).toBe('answered')
         expect(result.answer).toBe('The Lion Nebula (Sh2-132) resembles a big cat.')
         expect(result.remark).toBe('')
     })

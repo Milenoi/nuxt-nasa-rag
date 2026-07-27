@@ -6,7 +6,7 @@ import type { VectorStore } from './ports/repositories'
 // model. Only a coarse pre-filter: embedding scores can't tell gibberish from a
 // real question (random input often scores high), so the real call is the model's,
 // via the NONSENSE / NO_MATCH sentinels below.
-const NONSENSE_CUTOFF = 0.48
+const MIN_RETRIEVAL_SCORE = 0.48
 
 interface Deps {
     embedder: Embedder
@@ -47,12 +47,12 @@ Question: ${question}`
 function classify(raw: string, sources: RetrievedSource[], topScore: number): AskResult {
     const text = raw.trimStart()
     if (/^NONSENSE\b/i.test(text)) {
-        return { state: 'nonsense', sources: [], topScore, answer: '', remark: text.replace(/^NONSENSE\b[:\s]*/i, '').trim() }
+        return { state: 'invalidInput', sources: [], topScore, answer: '', remark: text.replace(/^NONSENSE\b[:\s]*/i, '').trim() }
     }
     if (/^NO_MATCH\b/i.test(text)) {
-        return { state: 'noAnswer', sources, topScore, answer: '', remark: text.replace(/^NO_MATCH\b[:\s]*/i, '').trim() }
+        return { state: 'outOfScope', sources, topScore, answer: '', remark: text.replace(/^NO_MATCH\b[:\s]*/i, '').trim() }
     }
-    return { state: 'answer', sources, topScore, answer: text, remark: '' }
+    return { state: 'answered', sources, topScore, answer: text, remark: '' }
 }
 
 // The full RAG pipeline for one question: embed, retrieve, pre-filter, generate,
@@ -61,8 +61,8 @@ export async function resolveQuestion(question: string, options: Options, deps: 
     const vector = await deps.embedder.embed(question)
     const sources = await deps.vectorStore.query(vector, 5)
     const topScore = sources[0]?.score ?? 0
-    if (topScore < NONSENSE_CUTOFF) {
-        return { state: 'nonsense', sources: [], topScore, answer: '', remark: '' }
+    if (topScore < MIN_RETRIEVAL_SCORE) {
+        return { state: 'invalidInput', sources: [], topScore, answer: '', remark: '' }
     }
     const raw = await deps.model.generate(buildPrompt(question, sources, options.playful))
     return classify(raw, sources, topScore)

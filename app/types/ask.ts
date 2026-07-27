@@ -12,10 +12,10 @@ export type Source = {
 }
 
 // What the backend decided about the question:
-//   answer   - a grounded answer drawn from the sources
-//   noAnswer - sources matched, but the model can't answer from them (show them anyway)
-//   nonsense - nothing in the archive comes close; no answer attempted
-export type AskState = 'answer' | 'noAnswer' | 'nonsense'
+//   answered     - a grounded answer drawn from the sources
+//   outOfScope   - a real question the archive doesn't cover; closest matches shown anyway
+//   invalidInput - unusable input (gibberish, or nothing comes close); no answer attempted
+export type AskState = 'answered' | 'outOfScope' | 'invalidInput'
 
 // The /api/ask response.
 export type AskResponse = {

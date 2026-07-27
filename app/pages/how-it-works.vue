@@ -47,9 +47,9 @@ const matches = await index.query({
     file: 'server/usecases/resolveQuestion.ts',
     code: `// The matches come back sorted; the top five are the sources.
 // Cheap guard: if even the closest scores far too low, skip
-// the model and show the "nonsense" screen.
-if (topScore < 0.48) {
-  return { state: 'nonsense', sources: [] }
+// the model; that input is treated as invalid.
+if (topScore < MIN_RETRIEVAL_SCORE) {
+  return { state: 'invalidInput', sources: [] }
 }
 // Otherwise the model itself judges the input (next step).`
   },
