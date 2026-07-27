@@ -8,8 +8,8 @@
   ]
 
 [build]
-  # Run the unit tests before building; a failing test aborts the deploy.
-  command = "npm run test && npm run build"
+  # Run the unit tests and the type check before building; either failing aborts the deploy.
+  command = "npm run test && npm run typecheck && npm run build"
 
 [build.environment]
   # These env vars are consumed only by the server-side Nitro function (SSR) and
