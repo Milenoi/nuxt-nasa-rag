@@ -1,9 +1,10 @@
 import type { Embedder } from '../usecases/ports/gateways'
 import { embed } from '../utils/embed'
+import { runUpstream } from './upstreamError'
 
 // Embedder adapter: wraps the shared low-level embed() (Gemini gemini-embedding-001),
-// which the ingest scripts also use. A thin wrapper so the query path and the
-// ingest path stay on the exact same embedding.
+// which the ingest path also uses. runUpstream translates any Gemini failure into an
+// UpstreamError at this boundary, so the core never sees a raw SDK error.
 export function geminiEmbedder(apiKey: string): Embedder {
-    return { embed: (text) => embed(text, apiKey) }
+    return { embed: (text) => runUpstream('gemini-embed', () => embed(text, apiKey)) }
 }

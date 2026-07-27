@@ -3,7 +3,7 @@ import { resolveQuestion } from '../usecases/resolveQuestion'
 import { geminiEmbedder } from '../infrastructure/geminiEmbedder'
 import { upstashVectorStore } from '../infrastructure/upstashVectorStore'
 import { geminiLanguageModel } from '../infrastructure/geminiLanguageModel'
-import { upstreamError } from '../infrastructure/upstreamError'
+import { toHttpError } from '../infrastructure/upstreamError'
 
 // Thin controller / composition root: build the adapters, run the use case, map
 // upstream errors. This is the only place that knows which concrete tech is used.
@@ -26,6 +26,6 @@ export default defineEventHandler(async (event) => {
     try {
         return { question, ...(await resolveQuestion(question, { playful }, deps)) }
     } catch (err) {
-        throw upstreamError(err)
+        throw toHttpError(err)
     }
 })
