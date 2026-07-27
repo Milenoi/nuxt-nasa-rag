@@ -15,9 +15,10 @@ learning project, and a sibling to my
 2. **Ask:** embed the question, find the closest APOD texts in the database, and let
    Gemini write an answer grounded only in those texts.
 
-Because the answer can only draw from the retrieved descriptions, it does not make
-things up. If the texts don't cover an otherwise real question, it shows the closest
-pictures instead of guessing; if the input is just gibberish, it says so and stops.
+Because the answer is drawn only from the retrieved descriptions, it stays grounded in
+real sources and keeps unsupported claims to a minimum (a strong prompt constraint, not
+an absolute guarantee). If the texts don't cover an otherwise real question, it shows the
+closest pictures instead of guessing; if the input is just gibberish, it says so and stops.
 The pictures behind an answer are always shown as sources.
 
 Two toggles on the start screen: **Smart search** suggests cleaned-up versions of your
