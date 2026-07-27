@@ -115,7 +115,7 @@ export default defineEventHandler(() => {
           role: 'Rank',
           color: 'purple',
           name: 'Keep the best matches',
-          desc: "Upstash already hands the matches back sorted by similarity, so this step just takes the top five and applies one cheap guard: if even the closest match scores far too low, skip the model and show the nonsense screen. Scores alone can't tell gibberish from a real question (random text often scores high), so the real judgement is the model's, in the next step."
+          desc: "Upstash already hands the matches back sorted by similarity, so this step just takes the top five and applies one cheap guard: if even the closest match scores far too low, skip the model and treat that input as invalid. Scores alone can't tell gibberish from a real question (random text often scores high), so the real judgement is the model's, in the next step."
         },
         {
           role: 'Answer',
