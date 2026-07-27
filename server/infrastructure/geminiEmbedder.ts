@@ -1,4 +1,4 @@
-import type { Embedder } from '../usecases/ports'
+import type { Embedder } from '../usecases/ports/gateways'
 import { embed } from '../utils/embed'
 
 // Embedder adapter: wraps the shared low-level embed() (Gemini gemini-embedding-001),

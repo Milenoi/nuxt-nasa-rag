@@ -28,6 +28,9 @@ useSeoMeta({
     <p class="mx-auto max-w-[58ch] text-[15px] leading-relaxed text-text-secondary">
       {{ about?.lead2 }}
     </p>
+    <p class="mx-auto mt-5 max-w-[58ch] text-[15px] leading-relaxed text-text-secondary">
+      {{ about?.lead3 }}
+    </p>
 
     <!-- The road here: the superseded plan A (struck through), why it changed,
          and the plan B it became. -->

@@ -1,4 +1,4 @@
-import type { QuerySuggester } from './ports'
+import type { QuerySuggester } from './ports/gateways'
 
 interface Deps {
     suggester: QuerySuggester

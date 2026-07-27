@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai'
-import type { LanguageModel } from '../usecases/ports'
+import type { LanguageModel } from '../usecases/ports/gateways'
 
 // LanguageModel adapter for Gemini. The API key is injected, not read from
 // useRuntimeConfig here, so the adapter stays context-free and the composition

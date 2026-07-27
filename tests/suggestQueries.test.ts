@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { suggestQueries } from '../server/usecases/suggestQueries'
-import type { QuerySuggester } from '../server/usecases/ports'
+import type { QuerySuggester } from '../server/usecases/ports/gateways'
 
 // A suggester stub returning a fixed list, recording what it was asked.
 function suggester(list: string[]) {

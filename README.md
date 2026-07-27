@@ -44,15 +44,18 @@ page, a "how it works" walkthrough, and an about page.
 The query path follows a clean-architecture split, so the core does not depend on the
 specific tech:
 
-- **`server/domain/`** plain types (the entities).
-- **`server/usecases/`** the `resolveQuestion` and `suggestQueries` use cases plus the
-  ports they need, an `Embedder`, a `VectorStore`, a `LanguageModel` and a
-  `QuerySuggester`.
-- **`server/infrastructure/`** the adapters that fulfil those ports (Gemini, Upstash),
-  plus a small `config.ts` that reads the keys once and injects them.
-- **`server/api/ask.post.ts`** and **`server/api/suggest.post.ts`** thin controllers that
-  wire the adapters into a use case (the composition roots): `ask` for the grounded
-  answer, `suggest` for the optional "did you mean?" step.
+- **`server/domain/`** plain types and pure rules (`ask.ts` for the query flow,
+  `apod.ts` for ingest).
+- **`server/usecases/`** the use cases (`resolveQuestion`, `suggestQueries`,
+  `ingestApodRange`) plus the ports they need, split into `ports/gateways.ts` (the
+  Gemini capabilities) and `ports/repositories.ts` (data: the vector store + NASA
+  catalogue).
+- **`server/infrastructure/`** the adapters that fulfil those ports (Gemini, Upstash,
+  NASA), plus a small `config.ts` that reads the keys once and injects them.
+- **`server/api/ask.post.ts`** and **`server/api/suggest.post.ts`** thin controllers
+  (the composition roots): `ask` for the grounded answer, `suggest` for the optional
+  "did you mean?" step. The ingest follows the same shape: one `ingestApodRange` use
+  case driven by both the backfill script and the daily Netlify function.
 
 Swapping Gemini for another model, or Upstash for another store, means writing one new
 adapter, the core stays untouched, and the use case is testable with fake adapters (no

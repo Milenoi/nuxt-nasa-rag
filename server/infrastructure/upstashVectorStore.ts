@@ -1,6 +1,6 @@
 import { Index } from '@upstash/vector'
-import type { VectorStore } from '../usecases/ports'
-import type { ApodMetadata } from '../utils/apodVector'
+import type { VectorStore } from '../usecases/ports/repositories'
+import type { ApodMetadata } from '../domain/apod'
 
 // VectorStore adapter for Upstash Vector. URL + token are injected by the
 // composition root. Maps Upstash matches to the domain RetrievedSource shape.

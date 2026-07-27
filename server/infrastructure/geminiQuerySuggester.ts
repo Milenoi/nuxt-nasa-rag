@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai'
-import type { QuerySuggester } from '../usecases/ports'
+import type { QuerySuggester } from '../usecases/ports/gateways'
 
 // QuerySuggester adapter for Gemini: proposes corrected astronomy search queries
 // (fix typos + spelling, keep the meaning). Returns them raw, one per line parsed

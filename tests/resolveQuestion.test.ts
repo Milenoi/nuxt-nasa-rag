@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { resolveQuestion } from '../server/usecases/resolveQuestion'
-import type { RetrievedSource } from '../server/domain/types'
-import type { Embedder, VectorStore, LanguageModel } from '../server/usecases/ports'
+import type { RetrievedSource } from '../server/domain/ask'
+import type { Embedder, LanguageModel } from '../server/usecases/ports/gateways'
+import type { VectorStore } from '../server/usecases/ports/repositories'
 
 // The use case never inspects the vector itself, so a fixed one is fine.
 const embedder: Embedder = { embed: async () => [0.1, 0.2, 0.3] }

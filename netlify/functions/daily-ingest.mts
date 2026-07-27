@@ -1,32 +1,29 @@
-import { Index } from '@upstash/vector'
-import { isUsableApod, toVectorItem } from '../../server/utils/apodVector'
-import { embed } from '../../server/utils/embed'
 import { loadRagConfig, loadNasaConfig } from '../../server/infrastructure/config'
+import { geminiEmbedder } from '../../server/infrastructure/geminiEmbedder'
+import { nasaApodCatalog } from '../../server/infrastructure/nasaApodCatalog'
+import { upstashKnowledgeIndex } from '../../server/infrastructure/upstashKnowledgeIndex'
+import { ingestApodRange } from '../../server/usecases/ingestApod'
 
-// Daily top-up: fetch today's APOD and upsert it. The historical backfill stays
-// in scripts/ingest.ts; this only ever adds the one new day. Idempotent on the
-// date id, so re-runs are harmless.
+const toIso = (d: Date) => d.toISOString().slice(0, 10)
+
+// Daily top-up: ingest just today's APOD. Same use case as the backfill, called with
+// a one-day range and no onBatch (there is only one entry, so nothing to pace).
 export default async () => {
-    const nasa = loadNasaConfig()
-
-    // No date param = today. thumbs=true yields video thumbnails.
-    const res = await fetch(`${nasa.apodUrl}?api_key=${nasa.apiKey}&thumbs=true`)
-    if (!res.ok) {
-        return new Response(`NASA API returned ${res.status}`, { status: 502 })
-    }
-    const entry = await res.json()
-
-    if (!isUsableApod(entry)) {
-        return new Response(`Skipped ${entry.date} (${entry.media_type})`, { status: 200 })
-    }
-
     const config = loadRagConfig()
-    const index = new Index({ url: config.upstashUrl, token: config.upstashToken })
-    await index.upsert([await toVectorItem(entry, (text) => embed(text, config.geminiApiKey))])
-    return new Response(`Upserted ${entry.date}: ${entry.title}`, { status: 200 })
+    const nasa = loadNasaConfig()
+    const today = toIso(new Date())
+
+    try {
+        const report = await ingestApodRange(today, today, {
+            catalog: nasaApodCatalog(nasa.apiKey, nasa.apodUrl),
+            embedder: geminiEmbedder(config.geminiApiKey),
+            index: upstashKnowledgeIndex(config.upstashUrl, config.upstashToken)
+        })
+        return new Response(`Ingested ${today}: fetched ${report.fetched}, added ${report.added}.`, { status: 200 })
+    } catch (err) {
+        return new Response(`Ingest failed: ${(err as Error).message}`, { status: 502 })
+    }
 }
 
 // Daily at 08:00 UTC, after APOD publishes.
-export const config = {
-    schedule: '0 8 * * *'
-}
+export const config = { schedule: '0 8 * * *' }

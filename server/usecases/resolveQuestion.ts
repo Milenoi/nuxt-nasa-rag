@@ -1,5 +1,6 @@
-import type { RetrievedSource, AskResult } from '../domain/types'
-import type { Embedder, VectorStore, LanguageModel } from './ports'
+import type { RetrievedSource, AskResult } from '../domain/ask'
+import type { Embedder, LanguageModel } from './ports/gateways'
+import type { VectorStore } from './ports/repositories'
 
 // Below this cosine score even the closest match is unrelated, so we skip the
 // model. Only a coarse pre-filter: embedding scores can't tell gibberish from a

@@ -136,6 +136,7 @@ export default defineEventHandler(() => {
       heading: 'Learning RAG by building it by hand',
       lead1: "I'm a frontend developer, curious about how AI actually works under the hood. Instead of reaching for a framework that hides everything, I wanted to build Retrieval-Augmented Generation from the ground up, so I could actually explain what embedding, retrieval and grounded generation each do, in my own words.",
       lead2: 'So every moving part here is deliberately visible: the embedding step calls a hosted model, the similarity search ranks stored vectors by cosine distance (I first wrote this by hand, then moved it to a hosted vector database), and the language model is told to answer only from the retrieved NASA texts.',
+      lead3: 'It was also my chance to practise Clean Architecture in a Nuxt app: the query and ingest flows are both split into a domain, use cases with ports, and infrastructure adapters, so the core logic never depends on Gemini, Upstash or NASA directly. Arguably over-engineered for a demo this size, but that was exactly the point, to learn the pattern by building it by hand.',
       journey: {
         label: 'How it got here',
         steps: [
