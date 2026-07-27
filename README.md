@@ -62,6 +62,11 @@ adapter, the core stays untouched, and the use case is testable with fake adapte
 real APIs). The About page tells the plan-A-to-plan-B story (hand-written cosine over a
 JSON file, then a hosted vector database).
 
+On the front end, the Ask page follows the same one-concern-per-file idea: all
+interaction lives in a `useAsk()` composable, the UI copy (and per-page SEO) in
+`useContent()`, and the four states (idle, answer, empty, error) are small view
+components, leaving `index.vue` as thin orchestration.
+
 ## Development
 
 ```bash
