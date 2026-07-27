@@ -920,7 +920,7 @@ function selectSource(index: number) {
         <button
           type="button"
           class="btn-glass rounded-lg px-6 py-3.5 text-sm font-medium text-foreground backdrop-blur-[10px]"
-          @click="submit"
+          @click="runSearch(query)"
         >
           {{ states?.retry }}
         </button>
