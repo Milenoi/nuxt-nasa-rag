@@ -1,2 +1,4 @@
 User-Agent: *
-Disallow:
+Allow: /
+
+Sitemap: https://nuxt-rag.netlify.app/sitemap.xml

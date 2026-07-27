@@ -5,6 +5,25 @@
 export default defineEventHandler(() => {
   return {
     siteName: 'APOD Ask',
+    // Per-page SEO copy (title + meta description), fed into useSeoMeta on each page
+    // so no page hard-codes its own head tags. The i18n home for meta text too.
+    seo: {
+      index: {
+        title: 'APOD Ask: ask the stars',
+        description:
+          'Ask an astronomy question and get an answer grounded in real NASA Astronomy Picture of the Day descriptions, with the source images.'
+      },
+      howItWorks: {
+        title: 'How it works | APOD Ask',
+        description:
+          'How APOD Ask turns a question into a grounded answer: embed, retrieve, rank, generate. Retrieval you can actually see.'
+      },
+      about: {
+        title: 'About | APOD Ask',
+        description:
+          'A hands-on RAG learning project over NASA APOD: Google Gemini embeddings, an Upstash vector store, and grounded Gemini answers, built from the ground up to learn how RAG works.'
+      }
+    },
     header: {
       brand: 'APOD Ask',
       github: 'GitHub ↗',

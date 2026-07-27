@@ -9,9 +9,8 @@ const hw = computed(() => content.value?.howItWorks)
 const sibling = computed(() => content.value?.sibling)
 
 useSeoMeta({
-  title: 'How it works | APOD Ask',
-  description:
-    'How APOD Ask turns a question into a grounded answer: embed, retrieve, rank, generate. Retrieval you can actually see.'
+  title: () => content.value?.seo?.howItWorks?.title,
+  description: () => content.value?.seo?.howItWorks?.description
 })
 
 // Node accent per pipeline stage, matching the footer pipeline colours.

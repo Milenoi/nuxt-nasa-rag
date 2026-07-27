@@ -2,7 +2,7 @@
 
 > A hands-on Retrieval-Augmented Generation (RAG) demo over NASA's Astronomy Picture of the Day (APOD). Ask an astronomy question in natural language and get an answer grounded only in real APOD explanation texts, with the source images and videos shown.
 
-APOD Ask is a learning and portfolio project by Melanie Stief. The retrieval is deliberately hand-written and fully visible. There is no black-box vector database. The question and the APOD texts are embedded with Google's multilingual Gemini embedding model, ranked by a few lines of hand-written cosine similarity over a plain JSON file, and answered by Google Gemini with a strict "answer only from these texts" grounding prompt. Questions can be asked in any language (e.g. German questions match the English APOD texts).
+APOD Ask is a learning and portfolio project by Melanie Stief. The whole RAG pipeline is deliberately visible: the question and every APOD explanation are embedded with Google's multilingual Gemini embedding model, the closest texts are retrieved by cosine similarity from a hosted Upstash Vector store, and Google Gemini writes the answer under a strict "answer only from these texts" grounding prompt. Questions can be asked in any language (e.g. German questions match the English APOD texts). The query and ingest paths both follow a clean-architecture split (domain, use cases with ports, infrastructure adapters), so the core never depends on Gemini, Upstash or NASA directly.
 
 ## Pages
 
@@ -14,7 +14,7 @@ APOD Ask is a learning and portfolio project by Melanie Stief. The retrieval is 
 
 - Framework: Nuxt 4 + Vue, Nitro server routes
 - Embeddings: Google Gemini `gemini-embedding-001` (multilingual, 768-dim, L2-normalized)
-- Vector store: Plain JSON file + hand-written cosine similarity (no vector database)
+- Vector store: Upstash Vector (hosted, cosine similarity)
 - Language model: Google Gemini (`gemini-flash-latest`) with a grounded prompt
 - Data: NASA Astronomy Picture of the Day (APOD) API
 - Hosting: Netlify
