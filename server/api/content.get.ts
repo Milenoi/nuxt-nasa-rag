@@ -68,10 +68,7 @@ export default defineEventHandler(() => {
       viewOriginal: 'View original',
       prevSource: 'Previous source',
       nextSource: 'Next source',
-      showInHero: 'Show {title} in the hero',
-      tolerance: 'Relevance',
-      toleranceHint: 'Dims the weaker sources so the strong ones stand out. Updates live, no re-ask needed.',
-      toleranceEmpty: 'You have dimmed every source. Ease the slider back down.'
+      showInHero: 'Show {title} in the hero'
     },
     // The "did you mean?" step shown when Smart search returns cleaned-up
     // alternatives for the user to pick from before the actual search runs.
@@ -118,7 +115,7 @@ export default defineEventHandler(() => {
           role: 'Rank',
           color: 'purple',
           name: 'Keep the best matches',
-          desc: "Upstash already hands the matches back sorted by similarity, so this step just takes the top five and applies one cheap guard: if even the closest match scores far too low, skip the model and show the nonsense screen. Scores alone can't tell gibberish from a real question (random text often scores high), so the real judgement is the model's, in the next step. The relevance slider on the results page is separate: it only dims weak sources, it decides nothing here."
+          desc: "Upstash already hands the matches back sorted by similarity, so this step just takes the top five and applies one cheap guard: if even the closest match scores far too low, skip the model and show the nonsense screen. Scores alone can't tell gibberish from a real question (random text often scores high), so the real judgement is the model's, in the next step."
         },
         {
           role: 'Answer',

@@ -9,7 +9,6 @@
 import { marked } from 'marked'
 import Autoplay from 'embla-carousel-autoplay'
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel'
-import { Slider } from '@/components/ui/slider'
 import { ChevronDown, Play } from '@lucide/vue'
 import type { Source, AskResponse } from '~/types/ask'
 
@@ -85,23 +84,6 @@ const showIdle = computed(() => status.value === 'idle' && !suggesting.value && 
 // clicking another source card swaps the hero to that picture.
 const heroIndex = ref(0)
 
-// Relevance tolerance: the score below which a source is dimmed out. This is
-// purely client-side polish on the results already returned; the backend decides
-// relevance with its own fixed cutoff. The slider drives the live dimming and
-// syncs to `?t=`, so there is nothing to re-fetch when it moves.
-const DEFAULT_THRESHOLD = 0.55
-const threshold = ref(DEFAULT_THRESHOLD)
-// reka-ui's Slider supports multiple thumbs, so its v-model is an array.
-const thresholdModel = computed({
-  get: () => [threshold.value],
-  set: (value: number[]) => { threshold.value = value[0] ?? DEFAULT_THRESHOLD }
-})
-// True once the slider filters out every source: the shown answer + hero no longer
-// reflect a valid result, so we mask them with a tolerance-empty state.
-const allBelowThreshold = computed(() =>
-  status.value === 'answer' && sources.value.length > 0 && sources.value.every((s) => s.score < threshold.value)
-)
-
 // Announced to assistive tech + used to move focus when a state change happens,
 // so the result isn't silent once the loader is removed from the DOM.
 const liveMessage = ref('')
@@ -151,9 +133,9 @@ let requestId = 0
 let disposed = false
 
 // Feed the page's reactive toggles into the pure shareQuery builder, so callers
-// only pass what varies (question, hero, tolerance).
-function linkQuery(q: string, hero: number, tol: number): Record<string, string> {
-  return shareQuery({ q, hero, tolerance: tol, starTrek: starTrek.value, rewrite: rewrite.value })
+// only pass what varies (question, hero).
+function linkQuery(q: string, hero: number): Record<string, string> {
+  return shareQuery({ q, hero, starTrek: starTrek.value, rewrite: rewrite.value })
 }
 
 async function runSearch(rawQuery: string) {
@@ -166,9 +148,9 @@ async function runSearch(rawQuery: string) {
   query.value = q
   suggestions.value = []
   askHint.value = ''
-  // Reflect the query + tolerance in the URL so the result is shareable.
+  // Reflect the query in the URL so the result is shareable.
   // (heroIndex resets to 0 just below, so a fresh ask carries no hero param.)
-  router.replace({ query: linkQuery(q, 0, threshold.value) })
+  router.replace({ query: linkQuery(q, 0) })
   const id = ++requestId
   status.value = 'loading'
   timing.value = null
@@ -303,22 +285,9 @@ watch(() => route.query.q, (raw) => {
   }
 })
 
-// Keep the tolerance live in the URL as the slider moves (debounced, so it isn't
-// replaced on every pixel). Carries the question + hero when there's a result.
-let tUrlTimer: ReturnType<typeof setTimeout> | undefined
-watch(threshold, (t) => {
-  clearTimeout(tUrlTimer)
-  tUrlTimer = setTimeout(() => {
-    const q = typeof route.query.q === 'string' ? route.query.q : ''
-    router.replace({ query: q ? linkQuery(q, heroIndex.value, t) : { t: t.toFixed(2) } })
-  }, 250)
-})
-
-// On unmount: block any late response from writing shared state, and drop the
-// pending tolerance-to-URL debounce so it can't fire against another route.
+// On unmount: block any late response from writing shared state after we leave.
 onUnmounted(() => {
   disposed = true
-  clearTimeout(tUrlTimer)
 })
 
 // Remember both toggles, and when a result is on screen keep them in the shareable
@@ -329,7 +298,7 @@ watch([starTrek, rewrite], () => {
     localStorage.setItem('apod-rewrite', rewrite.value ? '1' : '0')
   }
   const q = typeof route.query.q === 'string' ? route.query.q : ''
-  if (q) router.replace({ query: linkQuery(q, heroIndex.value, threshold.value) })
+  if (q) router.replace({ query: linkQuery(q, heroIndex.value) })
 })
 
 // `status` is shared state that outlives this page, but the answer/sources data
@@ -341,12 +310,6 @@ onMounted(async () => {
   // the featured source card (shareable URL).
   const shared = route.query.q
   const heroParam = route.query.hero
-  // Restore a shared tolerance BEFORE searching, so the auto-run honours it.
-  const tParam = route.query.t
-  if (typeof tParam === 'string') {
-    const t = Number(tParam)
-    if (!Number.isNaN(t)) threshold.value = Math.min(1, Math.max(0, t))
-  }
   // Restore the toggles: URL param wins (shared link), else localStorage.
   const stParam = route.query.st
   if (stParam === '0' || stParam === '1') {
@@ -367,7 +330,7 @@ onMounted(async () => {
     const h = Number(heroParam)
     if (Number.isInteger(h) && h > 0 && h < sources.value.length) {
       heroIndex.value = h
-      router.replace({ query: linkQuery(shared, h, threshold.value) })
+      router.replace({ query: linkQuery(shared, h) })
     }
   } else if (status.value !== 'idle') {
     reset()
@@ -419,9 +382,8 @@ watch(sliderSources, async () => {
 function selectSource(index: number) {
   heroIndex.value = index
   // Reflect the featured source in the URL (omit for the top match / index 0).
-  // Keep q + the current tolerance; add/drop hero.
   const q = typeof route.query.q === 'string' ? route.query.q : ''
-  router.replace({ query: linkQuery(q, index, threshold.value) })
+  router.replace({ query: linkQuery(q, index) })
   if (import.meta.client) {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' })
@@ -618,21 +580,6 @@ function selectSource(index: number) {
         </Transition>
         <div class="pointer-events-none absolute inset-0 bg-hero-scrim" />
 
-        <!-- Tolerance-empty mask: when the slider filters every source out, the
-             hero image no longer reflects a real match, so cover it. -->
-        <div
-          v-if="allBelowThreshold"
-          class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-5 bg-space-deep/85 px-6 text-center backdrop-blur-[2px]"
-        >
-          <BlackHole
-            variant="cool"
-            :size="150"
-          />
-          <p class="max-w-[320px] text-sm text-text-secondary">
-            {{ answerCopy?.toleranceEmpty }}
-          </p>
-        </div>
-
         <!-- New search, aligned to the content container -->
         <div class="absolute inset-x-0 top-[88px] z-20">
           <div class="container mx-auto px-5 md:px-8">
@@ -695,17 +642,9 @@ function selectSource(index: number) {
               {{ noDirectAnswer ? answerCopy?.closestHeading : answerCopy?.heading }}
             </h3>
           </div>
-          <!-- When the slider filters every source out, the earlier answer no
-               longer applies, so show a tolerance-empty note in its place. -->
-          <p
-            v-if="allBelowThreshold"
-            class="answer-prose text-text-secondary"
-          >
-            {{ answerCopy?.toleranceEmpty }}
-          </p>
           <!-- No grounded answer, but the sources are still the closest matches. -->
           <p
-            v-else-if="noDirectAnswer"
+            v-if="noDirectAnswer"
             class="answer-prose text-text-secondary"
           >
             {{ remark || answerCopy?.noAnswerNote }}
@@ -758,27 +697,6 @@ function selectSource(index: number) {
               </div>
             </div>
 
-            <!-- Relevance-tolerance slider: sets the cutoff a source's score must
-                 clear. Dragging dims the weak cards live (free, client-only); "ask
-                 again" re-runs the query with this cutoff. @keydown.stop keeps the
-                 arrow keys driving the slider, not the carousel's arrow-key paging. -->
-            <div
-              class="mb-6 flex items-center gap-3"
-              @keydown.stop
-            >
-              <span class="whitespace-nowrap text-sm text-text-secondary">{{ answerCopy?.tolerance }}</span>
-              <Slider
-                v-model="thresholdModel"
-                :min="0"
-                :max="1"
-                :step="0.01"
-                :aria-label="answerCopy?.tolerance"
-                class="max-w-[200px]"
-              />
-              <span class="w-9 font-mono text-xs tabular-nums text-text-secondary">{{ threshold.toFixed(2) }}</span>
-              <InfoTooltip :text="answerCopy?.toleranceHint" />
-            </div>
-
             <!-- Source carousel: every source except the one in the hero. Embla
                  handles scroll / drag / autoplay; clicking a card lifts it into the
                  hero (and the previous hero match drops back in here). -->
@@ -790,10 +708,7 @@ function selectSource(index: number) {
               >
                 <div
                   class="w-64 overflow-hidden rounded-xl border bg-card/70 transition duration-300 hover:bg-card"
-                  :class="[
-                    item.index === 0 ? 'border-accent-green/60' : 'border-transparent',
-                    item.src.score < threshold ? 'opacity-40 saturate-50' : ''
-                  ]"
+                  :class="item.index === 0 ? 'border-accent-green/60' : 'border-transparent'"
                 >
                   <!-- The card body promotes this source into the hero. The "View
                        original" link is a sibling below, not nested, so we never put
