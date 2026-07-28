@@ -33,10 +33,10 @@ export function nasaApodCatalog(apiKey: string, apodUrl: string): ApodCatalog {
             const entries: ApodEntry[] = []
             while (windowStart <= end) {
                 const windowEnd = new Date(windowStart)
-                windowEnd.setDate(windowStart.getDate() + CHUNK_DAYS - 1)
+                windowEnd.setUTCDate(windowStart.getUTCDate() + CHUNK_DAYS - 1)
                 if (windowEnd > end) windowEnd.setTime(end.getTime())
                 entries.push(...(await fetchWindow(toIso(windowStart), toIso(windowEnd))))
-                windowStart.setDate(windowStart.getDate() + CHUNK_DAYS)
+                windowStart.setUTCDate(windowStart.getUTCDate() + CHUNK_DAYS)
             }
             return entries
         }

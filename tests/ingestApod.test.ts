@@ -72,4 +72,16 @@ describe('ingestApodRange', () => {
         expect(batches).toEqual([2, 3])          // batch 1 → 2 done, batch 2 → 3 done
         expect(store.upserted).toHaveLength(3)   // all three ended up stored
     })
+
+    it('rejects a non-positive batchSize instead of looping forever', async () => {
+        const store = knowledgeIndex()
+        const run = (batchSize: number) => ingestApodRange('2026-01-01', '2026-01-01', {
+            catalog: catalog([entry('2026-01-01')]),
+            embedder,
+            index: store.index
+        }, { batchSize })
+
+        await expect(run(0)).rejects.toThrow('batchSize must be a positive integer')
+        await expect(run(-1)).rejects.toThrow('batchSize must be a positive integer')
+    })
 })

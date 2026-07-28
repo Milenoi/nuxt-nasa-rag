@@ -21,10 +21,13 @@ export async function runUpstream<T>(service: string, fn: () => Promise<T>): Pro
     }
 }
 
-// Map an UpstreamError (or any stray error) to a client HTTP error, so describeError
-// can name the cause (429 quota, 403, ...). Controllers use this; they never inspect
-// an SDK error shape themselves.
+// Map an UpstreamError to a client HTTP error: a 429 passes through (the user can
+// retry), anything else becomes 502 (a server-side upstream problem, not the client's,
+// so no raw 403/500 leaks out). The real service + status stay in statusMessage.
 export function toHttpError(err: unknown) {
-    const status = err instanceof UpstreamError ? err.status : 502
-    return createError({ statusCode: status, statusMessage: `Upstream service failed (${status})` })
+    if (err instanceof UpstreamError) {
+        const status = err.status === 429 ? 429 : 502
+        return createError({ statusCode: status, statusMessage: `Upstream ${err.service} failed (${err.status})` })
+    }
+    return createError({ statusCode: 502, statusMessage: 'Upstream service failed' })
 }

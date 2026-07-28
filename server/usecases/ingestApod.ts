@@ -56,6 +56,9 @@ export async function ingestApodRange(
     options: Options = {}
 ): Promise<IngestReport> {
     const { batchSize = 50, onBatch } = options
+    if (!Number.isInteger(batchSize) || batchSize < 1) {
+        throw new Error('batchSize must be a positive integer')
+    }
     const entries = await deps.catalog.fetchRange(startDate, endDate)
     const usable = entries.filter(isUsableApod)
     const existing = await deps.index.existingIds()
