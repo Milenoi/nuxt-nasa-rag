@@ -164,6 +164,28 @@
 @utility animate-fade-up { animation: fadeUp 0.5s ease; }
 @utility bg-gradient-accent { background-image: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple)); }
 @utility bg-hero-scrim { background: linear-gradient(180deg, rgba(2, 3, 8, 0.35) 0%, transparent 26%, rgba(2, 3, 8, 0.55) 66%, #020308 100%); }
+/* Site header: gradient scrim (masked + blurred), starfield mobile menu, nav text
+   shadow, brand size, orbit spinner. Values ported 1:1 from the former arbitraries. */
+@utility header-scrim {
+  background: linear-gradient(180deg, rgba(5, 5, 6, 0.62) 0%, rgba(5, 5, 6, 0.26) 46%, transparent 100%);
+  backdrop-filter: blur(11px);
+  -webkit-backdrop-filter: blur(11px);
+  mask-image: linear-gradient(180deg, #000 0%, #000 48%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 48%, transparent 100%);
+}
+@utility bg-menu-stars {
+  background:
+    radial-gradient(1px 1px at 18% 32%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 68% 55%, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(1.5px 1.5px at 42% 78%, rgba(255, 255, 255, 0.32), transparent),
+    radial-gradient(1px 1px at 85% 24%, rgba(255, 255, 255, 0.35), transparent),
+    rgba(6, 6, 8, 0.97);
+}
+@utility text-shadow-nav { text-shadow: 0 1px 10px rgba(0, 0, 0, 0.55); }
+@utility text-brand { font-size: 22px; letter-spacing: 0.01em; }
+@utility animate-orbit { animation: orbit 3.2s linear infinite; }
+@utility shadow-glow-cyan { box-shadow: 0 0 6px var(--accent-cyan); }
+
 /* Frosted "glass" surface + hover, shared by the primary action buttons. */
 @utility btn-glass {
   border: 1px solid rgba(255, 255, 255, 0.2);

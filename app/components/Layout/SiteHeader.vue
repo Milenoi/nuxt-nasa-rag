@@ -37,22 +37,22 @@ watch(
   <header class="fixed left-1/2 top-0 z-50 w-full -translate-x-1/2">
     <!-- Blurred gradient scrim that fades out downward (no hard edge). -->
     <div
-      class="pointer-events-none absolute inset-x-0 top-0 h-[104px] backdrop-blur-[11px] bg-[linear-gradient(180deg,rgba(5,5,6,0.62)_0%,rgba(5,5,6,0.26)_46%,transparent_100%)] [mask-image:linear-gradient(180deg,#000_0%,#000_48%,transparent_100%)] [-webkit-mask-image:linear-gradient(180deg,#000_0%,#000_48%,transparent_100%)] md:h-[140px]"
+      class="pointer-events-none absolute inset-x-0 top-0 h-26 header-scrim md:h-35"
     />
 
     <nav
-      class="container relative mx-auto flex h-[76px] items-center px-5 [text-shadow:0_1px_10px_rgba(0,0,0,0.55)] md:px-8"
+      class="container relative mx-auto flex h-19 items-center px-5 text-shadow-nav md:px-8"
     >
       <NuxtLink
         to="/"
-        class="font-serif text-[22px] tracking-[0.01em] text-white"
+        class="font-serif text-brand text-white"
         @click="resetToAsk"
       >
         {{ header?.brand }}
       </NuxtLink>
 
       <!-- Desktop nav -->
-      <div class="ml-auto hidden items-center gap-[30px] text-sm md:flex">
+      <div class="ml-auto hidden items-center gap-7.5 text-sm md:flex">
         <NuxtLink
           v-for="item in nav"
           :key="item.link"
@@ -79,22 +79,22 @@ watch(
         aria-label="Toggle menu"
         :aria-expanded="menuOpen"
         aria-controls="mobile-nav"
-        class="ml-auto flex h-[42px] w-[42px] items-center justify-center rounded-md border border-white/[0.18] bg-white/[0.04] text-white backdrop-blur focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
+        class="ml-auto flex size-10.5 items-center justify-center rounded-md border border-white/18 bg-white/4 text-white backdrop-blur focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
         @click="menuOpen = !menuOpen"
       >
         <span
           v-if="!menuOpen"
-          class="relative block h-[22px] w-[22px]"
+          class="relative block size-5.5"
         >
-          <span class="absolute inset-0 rounded-full border border-white/[0.28]" />
-          <span class="absolute left-1/2 top-1/2 -ml-[3px] -mt-[3px] h-[6px] w-[6px] rounded-full bg-text-strong" />
-          <span class="absolute inset-0 animate-[orbit_3.2s_linear_infinite]">
-            <span class="absolute left-1/2 top-[-2px] -ml-[2.5px] h-[5px] w-[5px] rounded-full bg-accent-cyan shadow-[0_0_6px_var(--accent-cyan)]" />
+          <span class="absolute inset-0 rounded-full border border-white/28" />
+          <span class="absolute left-1/2 top-1/2 -ml-0.75 -mt-0.75 size-1.5 rounded-full bg-text-strong" />
+          <span class="absolute inset-0 animate-orbit">
+            <span class="absolute left-1/2 -top-0.5 -ml-0.625 size-1.25 rounded-full bg-accent-cyan shadow-glow-cyan" />
           </span>
         </span>
         <span
           v-else
-          class="text-[17px] leading-none"
+          class="text-lg leading-none"
         >✕</span>
       </button>
     </nav>
@@ -109,13 +109,13 @@ watch(
       <div
         v-if="menuOpen"
         id="mobile-nav"
-        class="absolute inset-x-0 top-[76px] flex flex-col border-b border-border px-5 pb-[18px] pt-2 backdrop-blur-lg md:hidden bg-[radial-gradient(1px_1px_at_18%_32%,rgba(255,255,255,0.5),transparent),radial-gradient(1px_1px_at_68%_55%,rgba(255,255,255,0.4),transparent),radial-gradient(1.5px_1.5px_at_42%_78%,rgba(255,255,255,0.32),transparent),radial-gradient(1px_1px_at_85%_24%,rgba(255,255,255,0.35),transparent),rgba(6,6,8,0.97)]"
+        class="absolute inset-x-0 top-19 flex flex-col border-b border-border px-5 pb-4.5 pt-2 backdrop-blur-lg md:hidden bg-menu-stars"
       >
         <NuxtLink
           v-for="item in nav"
           :key="item.link"
           :to="item.link"
-          class="border-b border-white/[0.06] px-1 py-[14px] text-left text-base text-text-strong"
+          class="border-b border-white/6 px-1 py-3.5 text-left text-base text-text-strong"
           @click="item.link === '/' && resetToAsk()"
         >
           {{ item.label }}
@@ -124,7 +124,7 @@ watch(
           :href="header?.githubUrl"
           target="_blank"
           rel="noopener noreferrer"
-          class="px-1 py-[14px] text-base text-text-secondary"
+          class="px-1 py-3.5 text-base text-text-secondary"
         >
           {{ header?.github }}
         </a>
