@@ -49,7 +49,7 @@
     radial-gradient(1000px 560px at 80% 4%, rgba(60, 64, 150, 0.15), transparent 60%),
     radial-gradient(820px 640px at 8% 94%, rgba(96, 52, 128, 0.12), transparent 62%),
     radial-gradient(560px 420px at 46% 44%, rgba(34, 64, 120, 0.08), transparent 60%),
-    #020308;
+    var(--background);
 }
 
 .stars {

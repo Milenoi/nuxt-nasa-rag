@@ -38,6 +38,11 @@
   --text-muted: #8b8b90;
   --text-faint: #7d7d84;
 
+  /* Prose emphasis tiers for the rendered Markdown answer, brightest last. */
+  --prose-lead: #ececf0;
+  --prose-strong: #dfe6f2;
+  --prose-em: #ffffff;
+
   /* Warm-tinted text for the "error" state (matches the warm black hole). */
   --text-warm: #f4ece6;
   --text-warm-muted: #a79688;

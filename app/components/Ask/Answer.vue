@@ -343,16 +343,16 @@ function onCardClick(index: number) {
   font-weight: 300;
   font-size: 25px;
   line-height: 1.5;
-  color: #ececf0;
+  color: var(--prose-lead);
   margin-bottom: 1.25rem;
 }
 .answer-prose :deep(strong) {
-  color: #dfe6f2;
+  color: var(--prose-strong);
   font-weight: 500;
 }
 .answer-prose :deep(em) {
   font-style: italic;
-  color: #fff;
+  color: var(--prose-em);
 }
 .answer-prose :deep(ul),
 .answer-prose :deep(ol) {
@@ -370,7 +370,7 @@ function onCardClick(index: number) {
   color: var(--star-link);
 }
 .answer-prose :deep(a:hover) {
-  color: #fff;
+  color: var(--prose-em);
 }
 
 /* Hero image swap: the newly clicked source slides up over the previous one. */
