@@ -15,7 +15,7 @@ APOD Ask is a learning and portfolio project by Melanie Stief. The whole RAG pip
 - Framework: Nuxt 4 + Vue, Nitro server routes
 - Embeddings: Google Gemini `gemini-embedding-001` (multilingual, 768-dim, L2-normalized)
 - Vector store: Upstash Vector (hosted, cosine similarity)
-- Language model: Google Gemini (`gemini-flash-latest`) with a grounded prompt
+- Language model: Google Gemini (`gemini-flash-latest`) with a grounded prompt, returning a Zod-validated JSON reply (a decision, the answer, and the cited source ids)
 - Data: NASA Astronomy Picture of the Day (APOD) API
 - Hosting: Netlify
 

@@ -54,17 +54,20 @@ if (topScore < MIN_RETRIEVAL_SCORE) {
   },
   {
     file: 'server/usecases/resolveQuestion.ts',
-    code: `// Build the grounded prompt (answer only from these texts)...
-const prompt = \`Answer using ONLY the APOD descriptions.
-Reply NONSENSE for gibberish, NO_MATCH for a real question
-the texts don't cover, else answer and cite the picture.
+    code: `// The reply used to be free text ("NONSENSE", "NO_MATCH",
+// else an answer) that we parsed with fragile string checks.
+// Now the model fills a form we can read for sure: a Zod schema.
+const answerReply = z.object({
+  decision: z.enum(['answer', 'nonsense', 'noMatch']),
+  answer: z.string(),
+  remark: z.string(),
+  sourceIds: z.array(z.string())
+})
 
-\${context}
-Question: \${question}\`
-
-// ...then ask the model through a port. Gemini itself lives in
-// an adapter, so the use case never depends on the SDK.
-const reply = await model.generate(prompt)`
+// Ask the model through a port, handing it that schema. The
+// adapter makes Gemini reply as JSON and validates it, so the
+// use case gets a typed form back, never a string to parse.
+const reply = await model.generate(prompt, answerReply)`
   }
 ]
 

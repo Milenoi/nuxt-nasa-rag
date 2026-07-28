@@ -140,7 +140,7 @@ export default defineEventHandler(() => {
           role: 'Answer',
           color: 'green',
           name: 'Generate a grounded answer',
-          desc: "The question and the top texts go to Google Gemini with clear rules: reply NONSENSE for gibberish, NO_MATCH for a real question the texts don't cover, otherwise answer using only those descriptions and name the picture. That grounding keeps it honest, and an optional Star Trek toggle changes only the tone, never the facts."
+          desc: "The question and the top texts go to Google Gemini. It used to answer in free text with NONSENSE / NO_MATCH markers parsed by hand, brittle and unable to prove which pictures were used; now it fills a fixed JSON form, checked by a schema, so the reply can't drift and invented citations are dropped. An optional Star Trek toggle changes only the tone, never the facts."
         }
       ],
       footnote: 'Built with Nuxt 4 and Google Gemini, a sibling to the',
@@ -165,6 +165,11 @@ export default defineEventHandler(() => {
             dropped: 'Hand-written cosine over one plain JSON file.',
             reason: 'Lovely to learn on, but it will not scale.',
             now: 'A hosted vector database (Upstash Vector), live now.'
+          },
+          {
+            dropped: 'A free-text answer with NONSENSE / NO_MATCH markers, parsed by pattern-matching.',
+            reason: 'Brittle to read, and it never verified which pictures were actually cited.',
+            now: 'A schema-constrained JSON reply, validated with Zod, with its cited sources checked.'
           }
         ]
       },
@@ -173,7 +178,7 @@ export default defineEventHandler(() => {
         { label: 'Framework', value: 'Nuxt 4 + Vue, Nitro server routes' },
         { label: 'Embeddings', value: 'Google Gemini: gemini-embedding-001 (multilingual, 768-dim)' },
         { label: 'Vector store', value: 'Upstash Vector (was hand-written cosine over JSON first)' },
-        { label: 'Language model', value: 'Google Gemini: gemini-flash-latest (free tier)' },
+        { label: 'Language model', value: 'Google Gemini: gemini-flash-latest (free tier), structured JSON output validated with Zod' },
         { label: 'Data', value: 'NASA Astronomy Picture of the Day API' },
         { label: 'Ingest', value: 'Manual backfill script + a daily Netlify function' },
         { label: 'Hosting', value: 'Netlify' }
