@@ -73,12 +73,36 @@ components, leaving `index.vue` as thin orchestration.
 npm install
 npm run dev      # http://localhost:3000
 npm run ingest   # build/refresh the vector store, then restart dev
+npm run eval     # offline retrieval eval: Recall@K + MRR over a labelled test set
 ```
 
 The ingest is resumable and safe to re-run: it skips days already stored and works
 in small batches with pauses, upserting each batch immediately, so hitting the daily
 Gemini quota never loses more than the batch in progress. A daily top-up (`netlify/functions/daily-ingest.mts`) adds each new APOD day on
 its own, on a daily cron (`0 8 * * *`).
+
+`npm run eval` is an offline tuning tool (not part of the request path): it runs a
+small set of labelled questions through the real retrieval path and reports Recall@K
+and MRR, so `MIN_RETRIEVAL_SCORE` and `topK` can be set from numbers instead of
+guesswork. These are standard information-retrieval metrics.
+
+## Testing
+
+```bash
+npm run test       # vitest
+npm run typecheck  # vue-tsc, catches broken import type paths eslint/vitest miss
+npm run lint
+```
+
+The suite runs the core with fake adapters (no network), grouped by area:
+
+- **Retrieval decision** (`resolveQuestion`): the three states, the score pre-filter,
+  the structured reply and the source-citation check.
+- **Ingest** (`ingestApod`): the range/batching behaviour.
+- **Suggestions** (`suggestQueries`): the "did you mean?" cleanup.
+- **Eval metrics** (`evaluateRetrieval`): `reciprocalRank`, `recallAtK`, `mrr` and the
+  use case over fake ports.
+- **UI helpers** (`media`, `describeError`, `shareQuery`): the small client-side utils.
 
 ## Environment variables
 

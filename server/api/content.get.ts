@@ -134,7 +134,7 @@ export default defineEventHandler(() => {
           role: 'Rank',
           color: 'purple',
           name: 'Keep the best matches',
-          desc: "Upstash already hands the matches back sorted by similarity, so this step just takes the top five and applies one cheap guard: if even the closest match scores far too low, skip the model and treat that input as invalid. Scores alone can't tell gibberish from a real question (random text often scores high), so the real judgement is the model's, in the next step."
+          desc: "Upstash already hands the matches back sorted by similarity, so this step just takes the top five and applies one cheap guard: if even the closest match scores far too low, skip the model and treat that input as invalid. Scores alone can't tell gibberish from a real question (random text often scores high), so the real judgement is the model's, in the next step. How do we know the cutoff and the top-five are any good? An offline eval (`npm run eval`) asks a set of questions whose right answer we already know and grades how often, and how near the top, the right picture is found (the standard search metrics Recall@K and MRR), so those knobs are set from numbers, not guesses."
         },
         {
           role: 'Answer',
@@ -151,7 +151,7 @@ export default defineEventHandler(() => {
       tagline: 'A learning project',
       heading: 'Learning RAG by building it by hand',
       lead1: "I'm a frontend developer, curious about how AI actually works under the hood. Instead of reaching for a framework that hides everything, I wanted to build Retrieval-Augmented Generation from the ground up, so I could actually explain what embedding, retrieval and grounded generation each do, in my own words.",
-      lead2: 'So every moving part here is deliberately visible: the embedding step calls a hosted model, the similarity search ranks stored vectors by cosine distance (I first wrote this by hand, then moved it to a hosted vector database), and the language model is told to answer only from the retrieved NASA texts.',
+      lead2: 'So every moving part here is deliberately visible: the embedding step calls a hosted model, the similarity search ranks stored vectors by cosine distance (I first wrote this by hand, then moved it to a hosted vector database), and the language model is told to answer only from the retrieved NASA texts. To check the search rather than trust it blindly, I also built a small eval by hand using the standard search metrics (Recall@K and MRR): it asks questions whose right answer I already know and grades how often, and how near the top, the right picture comes back.',
       lead3: 'It was also my chance to practise Clean Architecture in a Nuxt app: the query and ingest flows are both split into a domain, use cases with ports, and infrastructure adapters, so the core logic never depends on Gemini, Upstash or NASA directly. Arguably over-engineered for a demo this size, but that was exactly the point, to learn the pattern by building it by hand.',
       journey: {
         label: 'How it got here',
@@ -170,6 +170,11 @@ export default defineEventHandler(() => {
             dropped: 'A free-text answer with NONSENSE / NO_MATCH markers, parsed by pattern-matching.',
             reason: 'Brittle to read, and it never verified which pictures were actually cited.',
             now: 'A schema-constrained JSON reply, validated with Zod, with its cited sources checked.'
+          },
+          {
+            dropped: 'Guessing the retrieval thresholds (how similar counts, how many to fetch) by eye.',
+            reason: 'No way to tell whether a tweak actually helped or hurt.',
+            now: 'A small offline eval that grades retrieval (Recall@K + MRR) so the knobs are set from numbers.'
           }
         ]
       },
