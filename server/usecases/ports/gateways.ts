@@ -1,3 +1,5 @@
+import type { ZodType } from 'zod'
+
 // Gateway ports: outbound access to external capabilities (the Gemini services).
 // Adapters implement these; the use cases know only these contracts, never the SDK.
 
@@ -6,9 +8,9 @@ export interface Embedder {
     embed(text: string): Promise<number[]>
 }
 
-// Turns a prompt into generated text.
+// Turns a prompt into a structured reply that matches the given Zod schema.
 export interface LanguageModel {
-    generate(prompt: string): Promise<string>
+    generate<T>(prompt: string, schema: ZodType<T>): Promise<T>
 }
 
 // Suggests corrected search queries (fix typos, tighten vague wording) for the user

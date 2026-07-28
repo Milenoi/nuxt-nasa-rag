@@ -12,23 +12,32 @@ function vectorStore(sources: RetrievedSource[]): VectorStore {
     return { query: async () => sources }
 }
 
-// A language model stub: fixed reply, and it records whether/how it was called.
-function languageModel(reply: string) {
+// The structured reply the model now returns (the "filled form").
+type Reply = {
+    decision: 'answer' | 'nonsense' | 'noMatch'
+    answer: string
+    remark: string
+    sourceIds: string[]
+}
+
+// A language model stub: fixed structured reply, records whether/how it was called.
+// The whole object is cast to the port so the test needn't reimplement the generic.
+function languageModel(reply: Reply) {
     const state = { calls: 0, lastPrompt: '' }
-    const model: LanguageModel = {
-        async generate(prompt) {
+    const model = {
+        async generate(prompt: string) {
             state.calls++
             state.lastPrompt = prompt
             return reply
         }
-    }
+    } as unknown as LanguageModel
     return { model, state }
 }
 
-// One source with a given similarity score.
-function source(score: number): RetrievedSource {
+// One source with a given similarity score (and optional date = its id).
+function source(score: number, date = '2024-01-01'): RetrievedSource {
     return {
-        date: '2024-01-01',
+        date,
         title: 'The Lion Nebula',
         imageUrl: '',
         explanation: 'A nebula shaped like a lion.',
@@ -39,8 +48,8 @@ function source(score: number): RetrievedSource {
 }
 
 describe('resolveQuestion', () => {
-    it('returns nonsense and never calls the model when the top score is below the cutoff', async () => {
-        const llm = languageModel('unused')
+    it('returns invalidInput and never calls the model when the top score is below the cutoff', async () => {
+        const llm = languageModel({ decision: 'answer', answer: 'unused', remark: '', sourceIds: [] })
         const result = await resolveQuestion('???', { playful: false }, {
             embedder,
             vectorStore: vectorStore([source(0.4)]),
@@ -51,8 +60,8 @@ describe('resolveQuestion', () => {
         expect(llm.state.calls).toBe(0)
     })
 
-    it('maps the model NONSENSE sentinel to the nonsense state and extracts the quip', async () => {
-        const llm = languageModel('NONSENSE :: That is a cat walking across the keyboard, captain.')
+    it('maps a nonsense decision to invalidInput and keeps the quip', async () => {
+        const llm = languageModel({ decision: 'nonsense', answer: '', remark: 'That is a cat walking across the keyboard, captain.', sourceIds: [] })
         const result = await resolveQuestion('aqqwqqq', { playful: true }, {
             embedder,
             vectorStore: vectorStore([source(0.75)]),
@@ -63,8 +72,8 @@ describe('resolveQuestion', () => {
         expect(result.sources).toEqual([])
     })
 
-    it('maps NO_MATCH to noAnswer, keeping the sources as closest matches', async () => {
-        const llm = languageModel('NO_MATCH :: Fascinating question, here is what came closest.')
+    it('maps a noMatch decision to outOfScope, keeping the sources as closest matches', async () => {
+        const llm = languageModel({ decision: 'noMatch', answer: '', remark: 'Fascinating question, here is what came closest.', sourceIds: [] })
         const result = await resolveQuestion('what looks like a cat', { playful: true }, {
             embedder,
             vectorStore: vectorStore([source(0.7), source(0.6)]),
@@ -76,8 +85,8 @@ describe('resolveQuestion', () => {
         expect(result.remark).toBe('Fascinating question, here is what came closest.')
     })
 
-    it('returns a grounded answer for a normal reply', async () => {
-        const llm = languageModel('The Lion Nebula (Sh2-132) resembles a big cat.')
+    it('returns a grounded answer for an answer decision', async () => {
+        const llm = languageModel({ decision: 'answer', answer: 'The Lion Nebula (Sh2-132) resembles a big cat.', remark: '', sourceIds: [] })
         const result = await resolveQuestion('what looks like a cat', { playful: false }, {
             embedder,
             vectorStore: vectorStore([source(0.8)]),
@@ -89,11 +98,11 @@ describe('resolveQuestion', () => {
     })
 
     it('puts the Star Trek voice in the prompt only when playful is on', async () => {
-        const playful = languageModel('answer')
+        const playful = languageModel({ decision: 'answer', answer: 'answer', remark: '', sourceIds: [] })
         await resolveQuestion('q', { playful: true }, { embedder, vectorStore: vectorStore([source(0.8)]), model: playful.model })
         expect(playful.state.lastPrompt).toMatch(/Star Trek/)
 
-        const plain = languageModel('answer')
+        const plain = languageModel({ decision: 'answer', answer: 'answer', remark: '', sourceIds: [] })
         await resolveQuestion('q', { playful: false }, { embedder, vectorStore: vectorStore([source(0.8)]), model: plain.model })
         expect(plain.state.lastPrompt).not.toMatch(/Star Trek/)
     })
