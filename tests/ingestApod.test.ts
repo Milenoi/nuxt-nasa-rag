@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { ingestApodRange } from '../server/usecases/ingestApod'
 import type { Embedder } from '../server/usecases/ports/gateways'
-import type { ApodCatalog, KnowledgeIndex } from '../server/usecases/ports/repositories'
-import type { ApodEntry, ApodVectorRecord } from '../server/domain/apod'
+import type { ApodCatalog, KnowledgeIndex, ApodVectorRecord } from '../server/usecases/ports/repositories'
+import type { ApodEntry } from '../server/domain/apod'
 
 // Fake NASA: returns a fixed list of entries for any range, no real fetch.
 function catalog(entries: ApodEntry[]): ApodCatalog {
@@ -30,7 +30,7 @@ function entry(date: string, overrides: Partial<ApodEntry> = {}): ApodEntry {
         title: `APOD ${date}`,
         url: 'https://apod/img.jpg',
         explanation: 'A description.',
-        media_type: 'image',
+        mediaType: 'image',
         ...overrides
     }
 }
@@ -41,7 +41,7 @@ describe('ingestApodRange', () => {
             entry('2026-01-01'),                          // usable, new
             entry('2026-01-02'),                          // usable, new
             entry('2026-01-03'),                          // usable, but already stored
-            entry('2026-01-04', { media_type: 'other' })  // not usable (not image/video)
+            entry('2026-01-04', { mediaType: 'other' })   // not usable (not image/video)
         ]
         const store = knowledgeIndex(['2026-01-03'])
 

@@ -1,6 +1,5 @@
 import { Index } from '@upstash/vector'
-import type { VectorStore } from '../usecases/ports/repositories'
-import type { ApodMetadata } from '../domain/apod'
+import type { VectorStore, ApodMetadata } from '../usecases/ports/repositories'
 import { runUpstream } from './upstreamError'
 
 // VectorStore adapter for Upstash Vector. URL + token are injected by the

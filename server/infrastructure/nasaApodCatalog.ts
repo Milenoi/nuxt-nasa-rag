@@ -6,13 +6,35 @@ const CHUNK_DAYS = 90 // NASA 500s on very large ranges, so fetch in windows thi
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 const toIso = (d: Date) => d.toISOString().slice(0, 10)
 
+// Raw NASA APOD response shape (their snake_case names). Mapped to the domain ApodEntry
+// here, so NASA's JSON naming never reaches the core.
+interface NasaApodDto {
+    date: string
+    title: string
+    url: string
+    explanation: string
+    media_type: string
+    thumbnail_url?: string
+}
+
+function toEntry(dto: NasaApodDto): ApodEntry {
+    return {
+        date: dto.date,
+        title: dto.title,
+        url: dto.url,
+        explanation: dto.explanation,
+        mediaType: dto.media_type === 'image' || dto.media_type === 'video' ? dto.media_type : 'other',
+        thumbnailUrl: dto.thumbnail_url
+    }
+}
+
 // ApodCatalog adapter for the NASA APOD API. Splits a large range into windows
 // (NASA rejects very large ones), fetches each with a short retry on transient
-// errors, and concatenates. The use case just asks for the whole range. A hard
-// failure surfaces as an UpstreamError, like the other adapters.
+// errors, maps the raw DTOs to domain entries, and concatenates. A hard failure
+// surfaces as an UpstreamError, like the other adapters.
 export function nasaApodCatalog(apiKey: string, apodUrl: string): ApodCatalog {
     // Fetch ONE window, retrying a few times on transient errors (500/503/429).
-    async function fetchWindow(startIso: string, endIso: string, attempt = 1): Promise<ApodEntry[]> {
+    async function fetchWindow(startIso: string, endIso: string, attempt = 1): Promise<NasaApodDto[]> {
         const url = `${apodUrl}?api_key=${apiKey}&start_date=${startIso}&end_date=${endIso}&thumbs=true`
         const response = await fetch(url)
         if (!response.ok) {
@@ -30,15 +52,15 @@ export function nasaApodCatalog(apiKey: string, apodUrl: string): ApodCatalog {
         async fetchRange(startDate, endDate) {
             const end = new Date(endDate)
             const windowStart = new Date(startDate)
-            const entries: ApodEntry[] = []
+            const dtos: NasaApodDto[] = []
             while (windowStart <= end) {
                 const windowEnd = new Date(windowStart)
                 windowEnd.setUTCDate(windowStart.getUTCDate() + CHUNK_DAYS - 1)
                 if (windowEnd > end) windowEnd.setTime(end.getTime())
-                entries.push(...(await fetchWindow(toIso(windowStart), toIso(windowEnd))))
+                dtos.push(...(await fetchWindow(toIso(windowStart), toIso(windowEnd))))
                 windowStart.setUTCDate(windowStart.getUTCDate() + CHUNK_DAYS)
             }
-            return entries
+            return dtos.map(toEntry)
         }
     }
 }

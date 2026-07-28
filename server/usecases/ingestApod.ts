@@ -1,6 +1,6 @@
 import type { Embedder } from './ports/gateways'
-import type { ApodCatalog, KnowledgeIndex } from './ports/repositories'
-import type { ApodEntry, ApodVectorRecord } from '../domain/apod'
+import type { ApodCatalog, KnowledgeIndex, ApodVectorRecord } from './ports/repositories'
+import type { ApodEntry } from '../domain/apod'
 import { isUsableApod } from '../domain/apod'
 
 // What ingestApodRange needs from the outside.
@@ -40,8 +40,8 @@ async function toRecord(entry: ApodEntry, embedder: Embedder): Promise<ApodVecto
             title: entry.title,
             imageUrl: entry.url,
             explanation: entry.explanation,
-            mediaType: entry.media_type,
-            thumbnailUrl: entry.thumbnail_url ?? ''
+            mediaType: entry.mediaType,
+            thumbnailUrl: entry.thumbnailUrl ?? ''
         }
     }
 }
