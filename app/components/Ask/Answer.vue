@@ -20,6 +20,23 @@ const topMatch = computed(() => props.sources[0])
 const heroSource = computed(() => props.sources[props.heroIndex] ?? topMatch.value)
 const heroIsTop = computed(() => props.heroIndex === 0)
 
+// Split the source explanation into paragraphs for a calmer read. Prefer real
+// blank-line breaks; most NASA texts are a single blob, so fall back to grouping
+// every few sentences into a paragraph instead of one wall of text.
+const heroParagraphs = computed(() => {
+  const text = heroSource.value?.explanation?.trim() ?? ''
+  if (!text) return []
+  const byBreaks = text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)
+  if (byBreaks.length > 1) return byBreaks
+  const sentences = text.split(/(?<=[.!?])\s+(?=[A-Z(])/)
+  const perParagraph = 3
+  const paragraphs: string[] = []
+  for (let i = 0; i < sentences.length; i += perParagraph) {
+    paragraphs.push(sentences.slice(i, i + perParagraph).join(' ').trim())
+  }
+  return paragraphs.filter(Boolean)
+})
+
 // aria-label for a source card, built from content ("Show {title} in the hero").
 const heroCardLabel = (title: string) =>
   (answerCopy.value?.showInHero ?? '').replace('{title}', title)
@@ -189,12 +206,26 @@ function onCardClick(index: number) {
             id="answer-heading"
             class="text-sm text-accent-purple"
           >
-            {{ noDirectAnswer ? answerCopy?.closestHeading : answerCopy?.heading }}
+            {{ !heroIsTop ? answerCopy?.aboutHeading : (noDirectAnswer ? answerCopy?.closestHeading : answerCopy?.heading) }}
           </h3>
+        </div>
+        <!-- Clicked a non-top source: show that picture's own APOD description, since
+             the grounded answer only covers the question / top match. -->
+        <div v-if="!heroIsTop">
+          <p
+            v-for="(para, i) in heroParagraphs"
+            :key="i"
+            class="mb-4 text-base leading-relaxed text-text-body"
+          >
+            {{ para }}
+          </p>
+          <p class="mt-5 text-xs italic text-text-faint">
+            {{ answerCopy?.aboutNote }}
+          </p>
         </div>
         <!-- No grounded answer, but the sources are still the closest matches. -->
         <p
-          v-if="noDirectAnswer"
+          v-else-if="noDirectAnswer"
           class="answer-prose text-text-secondary"
         >
           {{ remark || answerCopy?.noAnswerNote }}

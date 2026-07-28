@@ -73,6 +73,11 @@ export default defineEventHandler(() => {
     },
     answer: {
       heading: 'Answer',
+      // Shown above a clicked (non-top) source: its own APOD description, since the
+      // grounded answer only covers the question / top match.
+      aboutHeading: 'About this picture',
+      // Small caption under that description, clarifying it is NASA's own text.
+      aboutNote: "NASA's original APOD description for this picture, not the AI answer.",
       // Shown above the sources when the model had no direct answer.
       closestHeading: 'Closest matches',
       noAnswerNote: 'No direct answer in the APOD texts, but these came closest to what you asked.',
