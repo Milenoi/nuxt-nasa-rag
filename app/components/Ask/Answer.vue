@@ -147,7 +147,7 @@ function onCardClick(index: number) {
       <figcaption class="pointer-events-none absolute inset-x-0 bottom-6 md:bottom-9">
         <div class="container mx-auto px-5 md:px-8">
           <div class="mb-4 flex flex-wrap items-center gap-2">
-            <span class="inline-flex items-center gap-1.5 rounded-full border border-white/[0.16] bg-black/50 px-3 py-1.5 text-sm text-foreground">
+            <span class="inline-flex items-center gap-1.5 rounded-full border border-white/[0.16] bg-black/50 px-3 py-1.5 font-mono text-xs text-foreground">
               <span
                 aria-hidden="true"
                 class="size-1.5 rounded-full"
