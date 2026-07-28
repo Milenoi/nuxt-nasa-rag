@@ -69,6 +69,7 @@ export async function ingestApodRange(
         const slice = pending.slice(start, start + batchSize)
         const records: ApodVectorRecord[] = []
         for (const entry of slice) {
+            // Sequential on purpose: keeps embedding calls under Gemini's rate limit.
             records.push(await toRecord(entry, deps.embedder))
         }
         await deps.index.upsert(records)

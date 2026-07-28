@@ -76,8 +76,8 @@ npm run ingest   # build/refresh the vector store, then restart dev
 ```
 
 The ingest is resumable and safe to re-run: it skips days already stored and works
-in small batches with pauses, so hitting the daily Gemini quota never loses a whole
-run. A daily top-up (`netlify/functions/daily-ingest.mts`) adds each new APOD day on
+in small batches with pauses, upserting each batch immediately, so hitting the daily
+Gemini quota never loses more than the batch in progress. A daily top-up (`netlify/functions/daily-ingest.mts`) adds each new APOD day on
 its own, on a daily cron (`0 8 * * *`).
 
 ## Environment variables
