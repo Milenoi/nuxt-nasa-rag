@@ -59,6 +59,15 @@ ${context}
 Question: ${question}`
 }
 
+// Keep only cited ids that really exist among the retrieved sources (no invented
+// citations), then move those cited sources to the front, the rest after.
+function orderByCitations(sources: RetrievedSource[], sourceIds: string[]): RetrievedSource[] {
+    const cited = new Set(sourceIds.filter((id) => sources.some((s) => s.date === id)))
+    const first = sources.filter((s) => cited.has(s.date))
+    const rest = sources.filter((s) => !cited.has(s.date))
+    return [...first, ...rest]
+}
+
 // The full RAG pipeline for one question: embed, retrieve, pre-filter, generate,
 // map. Technology-free: it only talks to the injected ports.
 export async function resolveQuestion(question: string, options: Options, deps: Deps): Promise<AskResult> {
@@ -75,5 +84,7 @@ export async function resolveQuestion(question: string, options: Options, deps: 
     if (reply.decision === 'noMatch') {
         return { state: 'outOfScope', sources, topScore, answer: '', remark: reply.remark }
     }
-    return { state: 'answered', sources, topScore, answer: reply.answer, remark: reply.remark }
+
+    const ordered = orderByCitations(sources, reply.sourceIds)
+    return { state: 'answered', sources: ordered, topScore, answer: reply.answer, remark: reply.remark }
 }

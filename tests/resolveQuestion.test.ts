@@ -106,4 +106,19 @@ describe('resolveQuestion', () => {
         await resolveQuestion('q', { playful: false }, { embedder, vectorStore: vectorStore([source(0.8)]), model: plain.model })
         expect(plain.state.lastPrompt).not.toMatch(/Star Trek/)
     })
+
+    it('keeps only real cited ids and orders the cited sources first', async () => {
+        const a = source(0.9, '2024-01-01')
+        const b = source(0.8, '2024-01-02')
+        const c = source(0.7, '2024-01-03')
+        const llm = languageModel({ decision: 'answer', answer: 'x', remark: '', sourceIds: ['2024-01-03', '9999-99-99'] })
+        const result = await resolveQuestion('q', { playful: false }, {
+            embedder,
+            vectorStore: vectorStore([a, b, c]),
+            model: llm.model
+        })
+        expect(result.state).toBe('answered')
+        // cited source (c) moves first; the invented id is ignored; all three stay.
+        expect(result.sources.map((s) => s.date)).toEqual(['2024-01-03', '2024-01-01', '2024-01-02'])
+    })
 })
