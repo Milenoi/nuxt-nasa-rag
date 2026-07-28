@@ -89,7 +89,7 @@ function onCardClick(index: number) {
     <!-- Full-bleed hero of the current source (top match by default). Clicking a
          source card below swaps this image in with a slide. The text on top is held
          to the same content width as the header and footer. -->
-    <figure class="relative m-0 h-[440px] overflow-hidden bg-space-deep md:h-[560px]">
+    <figure class="relative m-0 h-110 overflow-hidden bg-space-deep md:h-140">
       <div
         class="absolute inset-0"
         :style="{ background: cardGradient(heroIndex) }"
@@ -131,7 +131,7 @@ function onCardClick(index: number) {
       <div class="pointer-events-none absolute inset-0 bg-hero-scrim" />
 
       <!-- New search, aligned to the content container -->
-      <div class="absolute inset-x-0 top-[88px] z-20">
+      <div class="absolute inset-x-0 top-22 z-20">
         <div class="container mx-auto px-5 md:px-8">
           <button
             type="button"
@@ -147,7 +147,7 @@ function onCardClick(index: number) {
       <figcaption class="pointer-events-none absolute inset-x-0 bottom-6 md:bottom-9">
         <div class="container mx-auto px-5 md:px-8">
           <div class="mb-4 flex flex-wrap items-center gap-2">
-            <span class="inline-flex items-center gap-1.5 rounded-full border border-white/[0.16] bg-black/50 px-3 py-1.5 font-mono text-xs text-foreground">
+            <span class="inline-flex items-center gap-1.5 rounded-full border border-white/16 bg-black/50 px-3 py-1.5 font-mono text-xs text-foreground">
               <span
                 aria-hidden="true"
                 class="size-1.5 rounded-full"
@@ -155,7 +155,7 @@ function onCardClick(index: number) {
               />
               {{ heroIsTop ? answerCopy?.topMatch : answerCopy?.match }} · {{ heroSource?.score.toFixed(2) }}
             </span>
-            <span class="inline-flex items-center rounded-full border border-white/[0.16] bg-black/50 px-3 py-1.5 font-mono text-xs text-text-body">
+            <span class="inline-flex items-center rounded-full border border-white/16 bg-black/50 px-3 py-1.5 font-mono text-xs text-text-body">
               {{ heroSource?.date }}
             </span>
           </div>

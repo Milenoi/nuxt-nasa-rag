@@ -20,7 +20,7 @@ withDefaults(defineProps<{ label?: string }>(), { label: '' })
         <span class="absolute left-1/2 top-0 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_10px_#fff]" />
       </div>
       <!-- inner orbit (cyan satellite, reversed) -->
-      <div class="absolute inset-[18px] rounded-full border border-white/[0.06] [animation:orbit_2.6s_linear_infinite_reverse]">
+      <div class="absolute inset-4.5 rounded-full border border-white/6 [animation:orbit_2.6s_linear_infinite_reverse]">
         <span class="absolute left-1/2 top-0 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-cyan shadow-[0_0_8px_var(--accent-cyan)]" />
       </div>
       <!-- glowing core -->

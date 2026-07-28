@@ -27,7 +27,7 @@ onMounted(() => panel.value?.focus())
     ref="panel"
     tabindex="-1"
     aria-labelledby="suggest-heading"
-    class="mx-auto flex min-h-[calc(100dvh-3.25rem)] max-w-[680px] flex-col justify-center px-5 py-16 outline-none animate-fade-up md:px-8"
+    class="mx-auto flex min-h-screen-nav max-w-[680px] flex-col justify-center px-5 py-16 outline-none animate-fade-up md:px-8"
   >
     <p class="text-sm text-text-faint">
       {{ copy?.askedLabel }}

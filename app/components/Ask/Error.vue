@@ -11,7 +11,7 @@ onMounted(() => errorHeading.value?.focus())
 
 <template>
   <section
-    class="flex min-h-[calc(100dvh-3.25rem)] flex-col items-center justify-center px-5 py-24 text-center animate-fade-up"
+    class="flex min-h-screen-nav flex-col items-center justify-center px-5 py-24 text-center animate-fade-up"
   >
     <BlackHole
       variant="warm"

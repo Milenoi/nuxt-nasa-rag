@@ -162,6 +162,9 @@
 
 /* Reusable utilities so templates don't repeat arbitrary values. */
 @utility animate-fade-up { animation: fadeUp 0.5s ease; }
+/* Full viewport height minus the mobile footer bar (3.25rem). Used by every
+   full-screen Ask state; extracted from a repeated calc() arbitrary. */
+@utility min-h-screen-nav { min-height: calc(100dvh - 3.25rem); }
 @utility bg-gradient-accent { background-image: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple)); }
 @utility bg-hero-scrim { background: linear-gradient(180deg, rgba(2, 3, 8, 0.35) 0%, transparent 26%, rgba(2, 3, 8, 0.55) 66%, #020308 100%); }
 /* Site header: gradient scrim (masked + blurred), starfield mobile menu, nav text

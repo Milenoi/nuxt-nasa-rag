@@ -65,7 +65,7 @@ const {
     <!-- SUGGESTING: Smart search fetching alternatives -->
     <div
       v-else-if="suggesting"
-      class="animate-fade-up flex min-h-[calc(100dvh-3.25rem)] items-center justify-center px-5"
+      class="animate-fade-up flex min-h-screen-nav items-center justify-center px-5"
     >
       <OrbitLoader :label="suggest?.loading" />
     </div>
@@ -83,7 +83,7 @@ const {
     <!-- LOADING: the orbit spinner -->
     <div
       v-else-if="status === 'loading'"
-      class="animate-fade-up flex min-h-[calc(100dvh-3.25rem)] items-center justify-center px-5"
+      class="animate-fade-up flex min-h-screen-nav items-center justify-center px-5"
     >
       <OrbitLoader :label="ask?.loading" />
     </div>

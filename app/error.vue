@@ -44,7 +44,7 @@ const goHome = () => clearError({ redirect: '/' })
     </main>
 
     <!-- Static status strip, styled like the app footer -->
-    <footer class="fixed bottom-0 left-1/2 z-[60] w-full -translate-x-1/2 border-t border-border bg-card/75 backdrop-blur-xl backdrop-saturate-150">
+    <footer class="fixed bottom-0 left-1/2 z-60 w-full -translate-x-1/2 border-t border-border bg-card/75 backdrop-blur-xl backdrop-saturate-150">
       <div class="container mx-auto flex h-13 items-center justify-between gap-4 px-5 font-mono text-xs text-text-muted md:px-8">
         <div class="flex items-center gap-2">
           <span class="size-1.5 rounded-full bg-destructive" />

@@ -16,7 +16,7 @@ const showExamples = ref(false)
 
 <template>
   <section
-    class="mx-auto flex min-h-[calc(100dvh-3.25rem)] max-w-[820px] flex-col px-5 pb-16 pt-28 animate-fade-up md:px-8 md:pt-[19vh]"
+    class="mx-auto flex min-h-screen-nav max-w-[820px] flex-col px-5 pb-16 pt-28 animate-fade-up md:px-8 md:pt-[19vh]"
   >
     <p class="mb-6 text-sm text-text-faint">
       {{ hero?.eyebrow }}
@@ -104,7 +104,7 @@ const showExamples = ref(false)
         v-for="example in ask?.examples"
         :key="example"
         type="button"
-        class="inline-flex items-center gap-2 rounded-full border border-white/11 bg-white/3 px-4 py-2.5 text-sm text-text-body transition-colors hover:border-white/[0.28] hover:text-foreground"
+        class="inline-flex items-center gap-2 rounded-full border border-white/11 bg-white/3 px-4 py-2.5 text-sm text-text-body transition-colors hover:border-white/28 hover:text-foreground"
         @click="emit('useExample', example)"
       >
         <span

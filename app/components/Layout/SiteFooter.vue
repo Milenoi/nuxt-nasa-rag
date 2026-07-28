@@ -63,15 +63,15 @@ const mobileStatus = computed(() => ({
 
 <template>
   <footer
-    class="fixed bottom-0 left-1/2 z-[60] w-full -translate-x-1/2 border-t border-border bg-surface-footer backdrop-blur-[18px] backdrop-saturate-[1.2]"
+    class="fixed bottom-0 left-1/2 z-60 w-full -translate-x-1/2 border-t border-border bg-surface-footer backdrop-blur-[18px] backdrop-saturate-[1.2]"
   >
     <div
-      class="container mx-auto flex h-[52px] items-center justify-between gap-4 px-5 md:px-8"
+      class="container mx-auto flex h-13 items-center justify-between gap-4 px-5 md:px-8"
     >
       <!-- Mobile: a single plain-language status instead of the full pipeline. -->
       <div class="flex items-center gap-2 font-mono text-xs text-text-muted sm:hidden">
         <span
-          class="size-[7px] rounded-full transition-colors"
+          class="size-1.75 rounded-full transition-colors"
           :style="{ background: mobileStatus.color, boxShadow: `0 0 8px 1px ${mobileStatus.color}55` }"
         />
         {{ mobileStatus.label }}
@@ -90,7 +90,7 @@ const mobileStatus = computed(() => ({
           >→</span>
           <span class="inline-flex items-center gap-1.5">
             <span
-              class="size-[7px] rounded-full"
+              class="size-1.75 rounded-full"
               :class="isIdle ? 'pipeline-wave' : 'transition-colors'"
               :style="isIdle ? { '--i': i } : { background: stage.color, boxShadow: `0 0 8px 1px ${stage.color}55` }"
             />
