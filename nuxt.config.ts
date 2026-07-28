@@ -32,8 +32,11 @@ export default defineNuxtConfig({
   image: imageConfig,
 
   // Fonts are referenced via CSS custom properties (var(--font-sans) …), which
-  // @nuxt/fonts cannot always detect through the indirection, list them
-  // explicitly so they are reliably self-hosted and preloaded.
+  // @nuxt/fonts cannot detect through the indirection, so list them explicitly to
+  // self-host them. They use font-display: swap, so they never block rendering; a
+  // rel=preload is deliberately NOT forced: the module can't attribute a preload to
+  // the render through the var() indirection, and the Ask page's LCP is the hero
+  // image (already preloaded as an image), not text.
   fonts: {
     families: [
       { name: 'Inter', weights: [300, 400, 500, 600] },
