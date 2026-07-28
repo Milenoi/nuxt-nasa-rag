@@ -1,3 +1,6 @@
+import type { Embedder } from './ports/gateways'
+import type { VectorStore } from './ports/repositories'
+
 // One test question with the APOD ids (dates) that should be retrieved. A negative
 // case (gibberish or an uncovered topic) has an empty expectedIds.
 export interface EvalCase {
@@ -40,4 +43,35 @@ export function mrr(results: EvalCaseResult[]): number {
     const positive = results.filter((r) => r.expectedIds.length > 0)
     if (positive.length === 0) return 0
     return positive.reduce((sum, r) => sum + r.reciprocalRank, 0) / positive.length
+}
+
+interface Deps {
+    embedder: Embedder
+    vectorStore: VectorStore
+}
+
+interface Options {
+    topK: number
+}
+
+// Run each case through the real retrieval path (embed then query) and score it.
+// Sequential on purpose: one embed call at a time is gentle on the Gemini quota,
+// the same reason the ingest embeds sequentially.
+export async function evaluateRetrieval(cases: EvalCase[], deps: Deps, options: Options): Promise<EvalReport> {
+    const results: EvalCaseResult[] = []
+    for (const c of cases) {
+        const vector = await deps.embedder.embed(c.question)
+        const sources = await deps.vectorStore.query(vector, options.topK)
+        const retrieved = sources.map((s) => ({ id: s.date, score: s.score }))
+        const rr = reciprocalRank(retrieved.map((r) => r.id), c.expectedIds)
+        results.push({
+            question: c.question,
+            expectedIds: c.expectedIds,
+            retrieved,
+            hit: c.expectedIds.length > 0 && rr > 0,
+            reciprocalRank: rr,
+            topScore: retrieved[0]?.score ?? 0
+        })
+    }
+    return { topK: options.topK, results, recallAtK: recallAtK(results), mrr: mrr(results) }
 }

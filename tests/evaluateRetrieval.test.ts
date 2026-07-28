@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { reciprocalRank, recallAtK, mrr } from '../server/usecases/evaluateRetrieval'
+import { reciprocalRank, recallAtK, mrr, evaluateRetrieval } from '../server/usecases/evaluateRetrieval'
 import type { EvalCaseResult } from '../server/usecases/evaluateRetrieval'
+import type { Embedder } from '../server/usecases/ports/gateways'
+import type { VectorStore } from '../server/usecases/ports/repositories'
+import type { RetrievedSource } from '../server/domain/ask'
 
 // Build a minimal result row for the aggregate tests.
 function result(expectedIds: string[], reciprocalRank: number): EvalCaseResult {
@@ -39,5 +42,34 @@ describe('recallAtK / mrr', () => {
     it('are 0 when there are no positive cases', () => {
         expect(recallAtK([result([], 0)])).toBe(0)
         expect(mrr([result([], 0)])).toBe(0)
+    })
+})
+
+const embedder: Embedder = { embed: async () => [0.1] }
+
+function source(date: string, score: number): RetrievedSource {
+    return { date, title: '', imageUrl: '', explanation: '', mediaType: 'image', thumbnailUrl: '', score }
+}
+
+// A vector store that returns a fixed list (top-k slice), ignoring the vector.
+function vectorStore(sources: RetrievedSource[]): VectorStore {
+    return { query: async (_vector, topK) => sources.slice(0, topK) }
+}
+
+describe('evaluateRetrieval', () => {
+    it('computes per-case results and aggregates over positive cases', async () => {
+        const cases = [
+            { question: 'lion nebula', expectedIds: ['2024-01-01'] },
+            { question: 'asdfgh', expectedIds: [] }
+        ]
+        const store = vectorStore([source('2024-01-01', 0.8), source('2024-01-02', 0.6)])
+        const report = await evaluateRetrieval(cases, { embedder, vectorStore: store }, { topK: 5 })
+
+        expect(report.results[0].hit).toBe(true)
+        expect(report.results[0].reciprocalRank).toBe(1)
+        expect(report.results[0].topScore).toBe(0.8)
+        expect(report.results[1].hit).toBe(false)     // negative case
+        expect(report.recallAtK).toBe(1)              // 1 positive case, hit
+        expect(report.mrr).toBe(1)
     })
 })
