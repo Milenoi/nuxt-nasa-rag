@@ -120,6 +120,10 @@ npm run typecheck  # vue-tsc, catches broken import type paths eslint/vitest mis
 npm run lint
 ```
 
+Husky wires the fast checks into git: **pre-commit** runs ESLint on the staged
+files (lint-staged) plus the test suite, both about a second. **pre-push** runs
+the typecheck, which takes ~30s and is too slow for every commit.
+
 The suite runs the core with fake adapters (no network), grouped by area:
 
 - **Retrieval decision** (`resolveQuestion`): the three states, the score pre-filter,
