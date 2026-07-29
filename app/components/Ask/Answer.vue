@@ -17,17 +17,20 @@ const emit = defineEmits<{ reset: []; select: [index: number] }>()
 const { answerCopy } = useContent()
 
 const topMatch = computed(() => props.sources[0])
-const heroSource = computed(() => props.sources[props.heroIndex] ?? topMatch.value)
-const heroIsTop = computed(() => props.heroIndex === 0)
+// heroIndex -1 means "no picture up top": without a grounded answer the matches are
+// only nearest neighbours, and a full-bleed hero read like a hit. That state shows
+// the starfield instead. Clicking a card is a deliberate choice, so it promotes that
+// picture into a real, fully lit hero.
+const hasHero = computed(() => props.heroIndex >= 0)
+const heroSource = computed(() =>
+  hasHero.value ? (props.sources[props.heroIndex] ?? topMatch.value) : undefined
+)
+// Only a grounded answer's top match echoes the question in the hero; anywhere else
+// the hero is just a source picture.
+const heroIsQuestion = computed(() => hasHero.value && props.heroIndex === 0 && !props.noDirectAnswer)
 
-// Without a grounded answer the pictures are only the nearest neighbours, so they are
-// dimmed and desaturated: a full-bleed, fully lit hero reads like a hit. Clicking a
-// card is a deliberate choice, so that picture comes back to full strength in the hero.
+// The cards stay dimmed and desaturated while there is no grounded answer.
 const dimmed = computed(() => props.noDirectAnswer)
-const heroDimmed = computed(() => dimmed.value && heroIsTop.value)
-// No transition class here: the hero already animates through hero-swap, and a second
-// transition on opacity would fight it.
-const dimClasses = 'opacity-55 saturate-50'
 
 // Split the source explanation into paragraphs for a calmer read. Prefer real
 // blank-line breaks; most NASA texts are a single blob, so fall back to grouping
@@ -68,7 +71,8 @@ const autoplayPlugins = [
 ]
 
 // The carousel shows every source EXCEPT the one currently in the hero; clicking a
-// card promotes it, and the previously featured match drops back into the row.
+// card promotes it, and the previously featured match drops back into the row. With
+// no hero (closest-matches state) every match gets a card, including the top one.
 const carouselSources = computed(() =>
   props.sources
     .map((src, index) => ({ src, index }))
@@ -112,10 +116,49 @@ function onCardClick(index: number) {
 
 <template>
   <article class="pb-4 animate-fade-up">
+    <!-- No grounded answer, nothing promoted into the hero yet: the question and the
+         model's reply sit on the bare starfield (the fixed backdrop shows through),
+         so nothing up here can be mistaken for a matching picture. Same height as the
+         image hero, but it grows with a long reply instead of clipping it. -->
+    <section
+      v-if="!hasHero"
+      class="flex min-h-110 flex-col justify-between pb-6 pt-22 md:min-h-140 md:pb-9"
+    >
+      <div class="container mx-auto px-5 md:px-8">
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/40 px-4 py-2.5 text-sm text-foreground backdrop-blur-[10px] transition-colors hover:bg-black/60"
+          @click="emit('reset')"
+        >
+          <span aria-hidden="true">←</span> {{ answerCopy?.newSearch }}
+        </button>
+      </div>
+      <div class="container mx-auto px-5 md:px-8">
+        <div class="mb-2.5 text-sm text-text-body">
+          {{ answerCopy?.askedLabel }}
+        </div>
+        <h2
+          ref="answerHeading"
+          tabindex="-1"
+          class="max-w-[760px] font-serif text-[clamp(28px,5vw,52px)] font-light leading-[1.04] tracking-[-0.01em] text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan/50"
+        >
+          {{ queryEcho }}
+        </h2>
+        <!-- The reply carries the same weight as a grounded answer: it IS the answer
+             to this question, just a negative one. -->
+        <p class="answer-lead mt-5 max-w-[680px]">
+          {{ remark || answerCopy?.noAnswerNote }}
+        </p>
+      </div>
+    </section>
+
     <!-- Full-bleed hero of the current source (top match by default). Clicking a
          source card below swaps this image in with a slide. The text on top is held
          to the same content width as the header and footer. -->
-    <figure class="relative m-0 h-110 overflow-hidden bg-space-deep md:h-140">
+    <figure
+      v-else
+      class="relative m-0 h-110 overflow-hidden bg-space-deep md:h-140"
+    >
       <div
         class="absolute inset-0"
         :style="{ background: cardGradient(heroIndex) }"
@@ -131,7 +174,6 @@ function onCardClick(index: number) {
           loop
           playsinline
           class="absolute inset-0 h-full w-full object-cover"
-          :class="heroDimmed && dimClasses"
         />
         <!-- YouTube embed: autoplaying muted iframe. -->
         <iframe
@@ -141,7 +183,6 @@ function onCardClick(index: number) {
           :title="heroSource?.title ?? 'APOD video'"
           allow="autoplay; encrypted-media; picture-in-picture"
           class="absolute inset-0 h-full w-full"
-          :class="heroDimmed && dimClasses"
         />
         <!-- Still image, optimized via @nuxt/image (AVIF/WebP + Netlify CDN).
              <picture> gets the absolute fill; the inner <img> gets the sizing. -->
@@ -152,7 +193,6 @@ function onCardClick(index: number) {
           :alt="heroSource.title"
           sizes="600px sm:960px md:1280px lg:1600px xl:1920px"
           class="absolute inset-0"
-          :class="heroDimmed && dimClasses"
           :img-attrs="{ class: 'h-full w-full object-cover' }"
           @error="hideBrokenImage"
         />
@@ -180,44 +220,35 @@ function onCardClick(index: number) {
               <span
                 aria-hidden="true"
                 class="size-1.5 rounded-full"
-                :class="heroDimmed ? 'bg-accent-purple' : heroIsTop ? 'bg-accent-green' : 'bg-accent-cyan'"
+                :class="heroIsQuestion ? 'bg-accent-green' : 'bg-accent-cyan'"
               />
-              {{ heroDimmed ? answerCopy?.closestMatch : heroIsTop ? answerCopy?.topMatch : answerCopy?.match }} · {{ heroSource?.score.toFixed(2) }}
+              {{ heroIsQuestion ? answerCopy?.topMatch : answerCopy?.match }} · {{ heroSource?.score.toFixed(2) }}
             </span>
             <span class="inline-flex items-center rounded-full border border-white/16 bg-black/50 px-3 py-1.5 font-mono text-xs text-text-body">
               {{ heroSource?.date }}
             </span>
           </div>
           <div class="mb-2.5 text-sm text-text-body">
-            {{ heroIsTop ? answerCopy?.askedLabel : answerCopy?.sourceLabel }}
+            {{ heroIsQuestion ? answerCopy?.askedLabel : answerCopy?.sourceLabel }}
           </div>
           <h2
             ref="answerHeading"
             tabindex="-1"
             class="max-w-[760px] font-serif text-[clamp(28px,5vw,52px)] font-light leading-[1.04] tracking-[-0.01em] text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan/50"
           >
-            {{ heroIsTop ? queryEcho : heroSource?.title }}
+            {{ heroIsQuestion ? queryEcho : heroSource?.title }}
           </h2>
-          <!-- No grounded answer: say so right under the question, above the fold,
-               instead of leaving the note below the picture where it is missed. -->
-          <p
-            v-if="heroDimmed"
-            class="mt-3.5 flex max-w-[560px] items-start gap-2.5 text-sm leading-relaxed text-text-body"
-          >
-            <span
-              aria-hidden="true"
-              class="mt-2 h-0.5 w-6 shrink-0 rounded bg-gradient-accent"
-            />
-            {{ answerCopy?.noAnswerHeroNote }}
-          </p>
         </div>
       </figcaption>
     </figure>
 
     <!-- Body: content width, matching the header/footer container -->
     <div class="container mx-auto px-5 md:px-8">
-      <!-- The grounded AI answer, rendered from Markdown -->
+      <!-- The grounded AI answer, or the APOD text of a picture the visitor promoted
+           into the hero. Without a hero the reply already sits up top, so this whole
+           block is skipped and the closest matches follow directly. -->
       <section
+        v-if="hasHero"
         class="mx-auto max-w-[760px]"
         aria-labelledby="answer-heading"
       >
@@ -230,12 +261,15 @@ function onCardClick(index: number) {
             id="answer-heading"
             class="text-sm text-accent-purple"
           >
-            {{ !heroIsTop ? answerCopy?.aboutHeading : (noDirectAnswer ? answerCopy?.closestHeading : answerCopy?.heading) }}
+            {{ heroIsQuestion ? answerCopy?.heading : answerCopy?.aboutHeading }}
           </h3>
         </div>
-        <!-- Clicked a non-top source: show that picture's own APOD description, since
-             the grounded answer only covers the question / top match. -->
-        <div v-if="!heroIsTop">
+        <!-- Rendered from our own grounded LLM output, not user input. -->
+        <!-- eslint-disable-next-line vue/no-v-html -->
+        <div v-if="heroIsQuestion" class="answer-prose" v-html="answerHtml" />
+        <!-- A picture the visitor clicked: show its own APOD description, since the
+             grounded answer only covers the question / top match. -->
+        <div v-else>
           <p
             v-for="(para, i) in heroParagraphs"
             :key="i"
@@ -247,16 +281,6 @@ function onCardClick(index: number) {
             {{ answerCopy?.aboutNote }}
           </p>
         </div>
-        <!-- No grounded answer, but the sources are still the closest matches. -->
-        <p
-          v-else-if="noDirectAnswer"
-          class="answer-prose text-text-secondary"
-        >
-          {{ remark || answerCopy?.noAnswerNote }}
-        </p>
-        <!-- Rendered from our own grounded LLM output, not user input. -->
-        <!-- eslint-disable-next-line vue/no-v-html -->
-        <div v-else class="answer-prose" v-html="answerHtml" />
       </section>
 
       <!-- Sources -->
@@ -276,7 +300,7 @@ function onCardClick(index: number) {
                 id="sources-heading"
                 class="font-serif text-2xl text-foreground"
               >
-                {{ answerCopy?.sourcesHeading }}
+                {{ noDirectAnswer ? answerCopy?.closestHeading : answerCopy?.sourcesHeading }}
               </h3>
               <span class="text-sm text-text-faint">{{ sources.length }} {{ answerCopy?.sourcesCount }}</span>
             </div>
@@ -397,12 +421,17 @@ function onCardClick(index: number) {
   line-height: 1.75;
   color: var(--text-body);
 }
-.answer-prose :deep(p:first-child) {
+/* .answer-lead is the same treatment for a plain element: the no-answer reply must
+   read as an answer, not as a footnote. */
+.answer-prose :deep(p:first-child),
+.answer-lead {
   font-family: var(--serif);
   font-weight: 300;
   font-size: 25px;
   line-height: 1.5;
   color: var(--prose-lead);
+}
+.answer-prose :deep(p:first-child) {
   margin-bottom: 1.25rem;
 }
 .answer-prose :deep(strong) {

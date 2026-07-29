@@ -26,7 +26,7 @@ export function useAsk() {
   const rewrite = ref(false) // ?rw= + localStorage
   const suggesting = ref(false)
   const suggestions = ref<string[]>([])
-  const heroIndex = ref(0) // 0 = top match
+  const heroIndex = ref(0) // 0 = top match, -1 = no hero picture (closest matches)
   const liveMessage = ref('') // SR announcement (views move focus themselves)
 
   const showIdle = computed(
@@ -88,11 +88,13 @@ export function useAsk() {
         status.value = 'empty'
         liveMessage.value = a11y.value?.noResults ?? ''
       } else {
-        // answered / outOfScope both show hero + sources; outOfScope swaps the AI
-        // text for a "closest matches" note.
+        // answered / outOfScope share the same view; outOfScope starts without a hero
+        // picture (-1) so nothing up top reads like a hit, and drops the AI text for
+        // the model's "no direct answer" reply.
         sources.value = data.sources ?? []
         answer.value = data.answer
         noDirectAnswer.value = data.state === 'outOfScope'
+        heroIndex.value = noDirectAnswer.value ? -1 : 0
         status.value = 'answer'
         liveMessage.value = a11y.value?.answerReady ?? ''
       }
