@@ -13,7 +13,8 @@
     "lint:fix": "eslint . --fix",
     "test": "vitest run",
     "typecheck": "nuxi typecheck",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "prepare": "husky"
   },
   "dependencies": {
     "@google/genai": "^2.13.0",
@@ -42,6 +43,8 @@
     "@tailwindcss/vite": "^4.3.3",
     "dotenv": "^17.4.2",
     "eslint": "^10.7.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.2.0",
     "shadcn-nuxt": "^2.8.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.1",

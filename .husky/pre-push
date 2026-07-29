@@ -1,0 +1,2 @@
+# Runs about 30s, so it guards the push instead of every commit.
+npm run typecheck
