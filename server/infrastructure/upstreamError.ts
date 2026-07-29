@@ -26,8 +26,12 @@ export async function runUpstream<T>(service: string, fn: () => Promise<T>): Pro
 // so no raw 403/500 leaks out). The real service + status stay in statusMessage.
 export function toHttpError(err: unknown) {
     if (err instanceof UpstreamError) {
+        // Log server-side so upstream failures are visible in the function logs
+        // (service + status). The client only ever sees the sanitised HTTP error.
+        console.error(`[upstream] ${err.service} failed with status ${err.status}: ${err.message}`, err.original ?? '')
         const status = err.status === 429 ? 429 : 502
         return createError({ statusCode: status, statusMessage: `Upstream ${err.service} failed (${err.status})` })
     }
+    console.error('[upstream] unexpected non-UpstreamError reached toHttpError', err)
     return createError({ statusCode: 502, statusMessage: 'Upstream service failed' })
 }
