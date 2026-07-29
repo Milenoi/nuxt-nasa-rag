@@ -1,5 +1,5 @@
 import { marked } from 'marked'
-import type { Source, AskResponse } from '~/types/ask'
+import type { Source, AskResponse } from '#shared/contracts/ask'
 
 // All Ask-page interaction: the fetch to /api/ask (+ optional /api/suggest), the
 // state machine, race-guard, URL sync and toggles. Called ONCE from index.vue. The

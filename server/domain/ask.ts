@@ -1,26 +1,7 @@
-// Domain entities: the plain data the ask flow passes around. No SDK, no Nuxt,
-// no I/O. Innermost layer, depends on nothing.
-
-// One APOD source retrieved for a question, with its cosine similarity score.
-export interface RetrievedSource {
-    date: string
-    title: string
-    imageUrl: string
-    explanation: string
-    mediaType: string
-    thumbnailUrl: string
-    score: number
-}
-
-// What the pipeline decided about a question: an answer built from the sources, a real
-// question the archive doesn't cover (closest matches shown), or an unusable input.
-export type AskState = 'answered' | 'outOfScope' | 'invalidInput'
-
-// The result the use case returns and the API/UI share.
-export interface AskResult {
-    state: AskState
-    sources: RetrievedSource[]
-    topScore: number
-    answer: string
-    remark: string
-}
+// Domain entities for the ask flow. The shapes now live once in the shared Zod
+// contract (`#shared/contracts/ask`), which is the single source of truth for
+// client and server. This module re-exports them so the use cases and adapters
+// keep importing from the domain layer, unaware of where the definition lives.
+// Dependency rule is intact: the contract is framed as the core entities and
+// everything still points inward to it.
+export type { RetrievedSource, AskState, AskResult } from '#shared/contracts/ask'

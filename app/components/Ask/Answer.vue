@@ -2,7 +2,7 @@
 import Autoplay from 'embla-carousel-autoplay'
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel'
 import { Play } from '@lucide/vue'
-import type { Source } from '~/types/ask'
+import type { Source } from '#shared/contracts/ask'
 
 const props = defineProps<{
   sources: Source[]

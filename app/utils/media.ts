@@ -1,4 +1,4 @@
-import type { Source } from '~/types/ask'
+import type { Source } from '#shared/contracts/ask'
 
 export const isVideo = (src?: Source) => src?.mediaType === 'video'
 // APOD videos are either a direct .mp4/.webm or a YouTube embed.

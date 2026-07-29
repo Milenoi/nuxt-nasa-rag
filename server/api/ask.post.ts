@@ -4,6 +4,7 @@ import { geminiEmbedder } from '../infrastructure/geminiEmbedder'
 import { upstashVectorStore } from '../infrastructure/upstashVectorStore'
 import { geminiLanguageModel } from '../infrastructure/geminiLanguageModel'
 import { toHttpError } from '../infrastructure/upstreamError'
+import { askResponseSchema } from '#shared/contracts/ask'
 
 // Thin controller / composition root: build the adapters, run the use case, map
 // upstream errors. This is the only place that knows which concrete tech is used.
@@ -24,7 +25,10 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        return { question, ...(await resolveQuestion(question, { playful }, deps)) }
+        const result = await resolveQuestion(question, { playful }, deps)
+        // Validate the wire shape at the boundary: the server can't accidentally
+        // send a response that doesn't match the shared contract.
+        return askResponseSchema.parse({ question, ...result })
     } catch (err) {
         throw toHttpError(err)
     }

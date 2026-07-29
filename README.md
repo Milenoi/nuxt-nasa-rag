@@ -67,6 +67,30 @@ interaction lives in a `useAsk()` composable, the UI copy (and per-page SEO) in
 `useContent()`, and the four states (idle, answer, empty, error) are small view
 components, leaving `index.vue` as thin orchestration.
 
+### One type contract, no duplication
+
+The shapes that cross the wire (the `/api/ask` and `/api/suggest` responses) are defined
+**once**, as Zod schemas in `shared/contracts/ask.ts`. Everything else derives from that
+single source: the server domain re-exports the inferred types, the controllers validate
+their responses at the boundary with `.parse()`, and the client imports the same types.
+
+Why do it this way:
+
+- **No duplicated definitions.** The client type used to be a hand-kept copy of the domain
+  type; the two could drift. Now there is one definition and `z.infer` derives the rest, so
+  a change to the shape updates client and server together.
+- **Runtime safety, not just compile-time.** Because it is a Zod schema and not just a
+  TypeScript type, the controllers actually `.parse()` what they send. If the server ever
+  built a wrong-shaped response, it fails loudly at the boundary instead of shipping bad
+  data to the browser.
+- **Zod stays out of the client bundle.** The client uses `import type` only, which the
+  build erases, so the schema code never reaches the browser (verified: the library is
+  absent from `.output/public`). The client pays for the types, not the runtime.
+- **Clean architecture is intact.** The contract is framed as the core entities and every
+  layer still points inward to it. The one concession is that the core entities are defined
+  with Zod instead of plain interfaces; no framework or SDK leaks inward. This is the same
+  "one schema, infer everywhere" pattern tRPC and OpenAPI-first tooling use.
+
 ## Development
 
 ```bash
