@@ -36,8 +36,8 @@ in-character voice (off = cool and factual). Both sync to the URL for sharing.
 - **Tailwind CSS v4** + **shadcn-vue**, hosted on **Netlify**
 
 The look is a dark, editorial space theme with a live pipeline in the footer and a
-draggable Taurus constellation as an easter egg. There are three pages: the Ask
-page, a "how it works" walkthrough, and an about page.
+draggable Taurus constellation as an easter egg. There are four pages: the Ask
+page, a "how it works" walkthrough, a FAQ, and an about page.
 
 ## Architecture
 
@@ -126,6 +126,12 @@ The suite runs the core with fake adapters (no network), grouped by area:
 - **Suggestions** (`suggestQueries`): the "did you mean?" cleanup.
 - **Eval metrics** (`evaluateRetrieval`): `reciprocalRank`, `recallAtK`, `mrr` and the
   use case over fake ports.
+- **NASA adapter** (`nasaApodCatalog`): window splitting over a mocked `fetch`, the
+  retry policy (429/503 retried, 400 not) and the snake_case to domain mapping.
+- **Error boundary** (`upstreamError`): a 429 passes through, any other upstream
+  status is sanitised to 502, and the failure is logged server-side.
+- **Type contract** (`askContract`): the shared Zod schemas accept a valid response
+  and reject a malformed one (wrong state, missing field).
 - **UI helpers** (`media`, `describeError`, `shareQuery`): the small client-side utils.
 
 ## Environment variables
