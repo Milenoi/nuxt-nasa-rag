@@ -112,6 +112,15 @@ function onCardClick(index: number) {
     window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' })
   }
 }
+
+// Back to the question: the answer's top match, or no hero at all when there was no
+// direct answer. Unlike a card, this button sits in the block it collapses, so the
+// focus would land on <body>; move it to the heading that replaces it.
+async function onBackToQuestion() {
+  onCardClick(props.noDirectAnswer ? -1 : 0)
+  await nextTick()
+  answerHeading.value?.focus({ preventScroll: true })
+}
 </script>
 
 <template>
@@ -145,8 +154,17 @@ function onCardClick(index: number) {
           {{ queryEcho }}
         </h2>
         <!-- The reply carries the same weight as a grounded answer: it IS the answer
-             to this question, just a negative one. -->
-        <p class="answer-lead mt-5 max-w-[680px]">
+             to this question, just a negative one. Same eyebrow, same serif lead. -->
+        <div class="mb-4 mt-6 flex items-center gap-3">
+          <span
+            aria-hidden="true"
+            class="h-0.5 w-6 rounded bg-gradient-accent"
+          />
+          <h3 class="text-sm text-accent-purple">
+            {{ answerCopy?.noMatchHeading }}
+          </h3>
+        </div>
+        <p class="answer-lead max-w-[680px]">
           {{ remark || answerCopy?.noAnswerNote }}
         </p>
       </div>
@@ -280,6 +298,19 @@ function onCardClick(index: number) {
           <p class="mt-5 text-xs italic text-text-faint">
             {{ answerCopy?.aboutNote }}
           </p>
+          <!-- The picture hero replaced the question and its answer, so this is the
+               only way back to them short of a new search. -->
+          <button
+            type="button"
+            class="mt-4 inline-flex items-start gap-2 text-left text-sm text-star-link transition-colors hover:text-white"
+            @click="onBackToQuestion"
+          >
+            <span aria-hidden="true">←</span>
+            <span>
+              {{ answerCopy?.backToQuestion }}
+              <span class="italic text-text-secondary">{{ queryEcho }}</span>
+            </span>
+          </button>
         </div>
       </section>
 
@@ -300,7 +331,14 @@ function onCardClick(index: number) {
                 id="sources-heading"
                 class="font-serif text-2xl text-foreground"
               >
-                {{ noDirectAnswer ? answerCopy?.closestHeading : answerCopy?.sourcesHeading }}
+                <!-- Two spans, not one string: `hidden` is display:none, so only the
+                     visible one is in the accessibility tree. "Closest matches" wraps
+                     next to the count on a phone. -->
+                <template v-if="noDirectAnswer">
+                  <span class="sm:hidden">{{ answerCopy?.closestHeadingShort }}</span>
+                  <span class="hidden sm:inline">{{ answerCopy?.closestHeading }}</span>
+                </template>
+                <template v-else>{{ answerCopy?.sourcesHeading }}</template>
               </h3>
               <span class="text-sm text-text-faint">{{ sources.length }} {{ answerCopy?.sourcesCount }}</span>
             </div>

@@ -88,8 +88,16 @@ export default defineEventHandler(() => {
       aboutHeading: 'About this picture',
       // Small caption under that description, clarifying it is NASA's own text.
       aboutNote: "NASA's original APOD description for this picture, not the AI answer.",
-      // Replaces the "Sources" heading when the model had no direct answer.
+      // Link under it, back to the question and its answer (the picture hero replaced
+      // both, so this is the only way back without starting a new search).
+      backToQuestion: 'Back to your question:',
+      // Eyebrow above the model's reply when there is no direct answer, the
+      // counterpart of "Answer" above a grounded one.
+      noMatchHeading: 'No match',
+      // Replaces the "Sources" heading when the model had no direct answer. The short
+      // form keeps the heading on one line next to the count on narrow screens.
       closestHeading: 'Closest matches',
+      closestHeadingShort: 'Closest',
       // Fallback for the model's own reply in that state (empty remark).
       noAnswerNote: 'No direct answer in the APOD texts, but these came closest to what you asked.',
       sourcesHeading: 'Sources',
