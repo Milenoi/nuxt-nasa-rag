@@ -20,6 +20,15 @@ const topMatch = computed(() => props.sources[0])
 const heroSource = computed(() => props.sources[props.heroIndex] ?? topMatch.value)
 const heroIsTop = computed(() => props.heroIndex === 0)
 
+// Without a grounded answer the pictures are only the nearest neighbours, so they are
+// dimmed and desaturated: a full-bleed, fully lit hero reads like a hit. Clicking a
+// card is a deliberate choice, so that picture comes back to full strength in the hero.
+const dimmed = computed(() => props.noDirectAnswer)
+const heroDimmed = computed(() => dimmed.value && heroIsTop.value)
+// No transition class here: the hero already animates through hero-swap, and a second
+// transition on opacity would fight it.
+const dimClasses = 'opacity-55 saturate-50'
+
 // Split the source explanation into paragraphs for a calmer read. Prefer real
 // blank-line breaks; most NASA texts are a single blob, so fall back to grouping
 // every few sentences into a paragraph instead of one wall of text.
@@ -122,6 +131,7 @@ function onCardClick(index: number) {
           loop
           playsinline
           class="absolute inset-0 h-full w-full object-cover"
+          :class="heroDimmed && dimClasses"
         />
         <!-- YouTube embed: autoplaying muted iframe. -->
         <iframe
@@ -131,6 +141,7 @@ function onCardClick(index: number) {
           :title="heroSource?.title ?? 'APOD video'"
           allow="autoplay; encrypted-media; picture-in-picture"
           class="absolute inset-0 h-full w-full"
+          :class="heroDimmed && dimClasses"
         />
         <!-- Still image, optimized via @nuxt/image (AVIF/WebP + Netlify CDN).
              <picture> gets the absolute fill; the inner <img> gets the sizing. -->
@@ -141,6 +152,7 @@ function onCardClick(index: number) {
           :alt="heroSource.title"
           sizes="600px sm:960px md:1280px lg:1600px xl:1920px"
           class="absolute inset-0"
+          :class="heroDimmed && dimClasses"
           :img-attrs="{ class: 'h-full w-full object-cover' }"
           @error="hideBrokenImage"
         />
@@ -168,9 +180,9 @@ function onCardClick(index: number) {
               <span
                 aria-hidden="true"
                 class="size-1.5 rounded-full"
-                :class="heroIsTop ? 'bg-accent-green' : 'bg-accent-cyan'"
+                :class="heroDimmed ? 'bg-accent-purple' : heroIsTop ? 'bg-accent-green' : 'bg-accent-cyan'"
               />
-              {{ heroIsTop ? answerCopy?.topMatch : answerCopy?.match }} · {{ heroSource?.score.toFixed(2) }}
+              {{ heroDimmed ? answerCopy?.closestMatch : heroIsTop ? answerCopy?.topMatch : answerCopy?.match }} · {{ heroSource?.score.toFixed(2) }}
             </span>
             <span class="inline-flex items-center rounded-full border border-white/16 bg-black/50 px-3 py-1.5 font-mono text-xs text-text-body">
               {{ heroSource?.date }}
@@ -186,6 +198,18 @@ function onCardClick(index: number) {
           >
             {{ heroIsTop ? queryEcho : heroSource?.title }}
           </h2>
+          <!-- No grounded answer: say so right under the question, above the fold,
+               instead of leaving the note below the picture where it is missed. -->
+          <p
+            v-if="heroDimmed"
+            class="mt-3.5 flex max-w-[560px] items-start gap-2.5 text-sm leading-relaxed text-text-body"
+          >
+            <span
+              aria-hidden="true"
+              class="mt-2 h-0.5 w-6 shrink-0 rounded bg-gradient-accent"
+            />
+            {{ answerCopy?.noAnswerHeroNote }}
+          </p>
         </div>
       </figcaption>
     </figure>
@@ -288,8 +312,9 @@ function onCardClick(index: number) {
               class="basis-auto"
             >
               <div
-                class="w-64 overflow-hidden rounded-xl border bg-card/70 transition duration-300 hover:bg-card"
-                :class="item.index === 0 ? 'border-accent-green/60' : 'border-transparent'"
+                class="group w-64 overflow-hidden rounded-xl border bg-card/70 transition duration-300 hover:bg-card"
+                :class="item.index !== 0 ? 'border-transparent'
+                  : dimmed ? 'border-accent-purple/50' : 'border-accent-green/60'"
               >
                 <!-- The card body promotes this source into the hero. The "View
                      original" link is a sibling below, not nested, so we never put an
@@ -300,8 +325,11 @@ function onCardClick(index: number) {
                   class="block w-full cursor-pointer text-left"
                   @click="onCardClick(item.index)"
                 >
+                  <!-- Same dimming as the hero, lifted on hover/focus so a card the
+                       visitor is actually reaching for shows its picture in full. -->
                   <div
-                    class="relative h-40 overflow-hidden"
+                    class="relative h-40 overflow-hidden transition duration-500"
+                    :class="dimmed && 'opacity-55 saturate-50 group-hover:opacity-100 group-hover:saturate-100 group-focus-within:opacity-100 group-focus-within:saturate-100'"
                     :style="{ background: cardGradient(item.index) }"
                   >
                     <NuxtPicture

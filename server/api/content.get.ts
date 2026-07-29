@@ -91,11 +91,17 @@ export default defineEventHandler(() => {
       // Shown above the sources when the model had no direct answer.
       closestHeading: 'Closest matches',
       noAnswerNote: 'No direct answer in the APOD texts, but these came closest to what you asked.',
+      // Short version of the same message, right under the question in the hero, so
+      // the "no answer" state is clear before scrolling past the picture.
+      noAnswerHeroNote: 'No direct answer in the APOD texts. These are only the closest pictures.',
       sourcesHeading: 'Sources',
       newSearch: 'New search',
       // "{n} APOD pictures", the count is prepended in the component.
       sourcesCount: 'APOD pictures',
       topMatch: 'Top match',
+      // Replaces "Top match" when there is no grounded answer: the picture scored
+      // highest, but it is not an answer, so the badge must not read like a hit.
+      closestMatch: 'Closest',
       match: 'Match',
       askedLabel: 'You asked',
       sourceLabel: 'Source',
