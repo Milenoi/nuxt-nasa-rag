@@ -34,6 +34,8 @@ in-character voice (off = cool and factual). Both sync to the URL for sharing.
 - **Upstash Vector** as the vector store
 - **@nuxt/image** for AVIF/WebP images through the Netlify Image CDN
 - **Tailwind CSS v4** + **shadcn-vue**, hosted on **Netlify**
+- **Schema.org structured data** on every page (`nuxt-schema-org`): a `WebSite` with a
+  search action, plus per-page types (`TechArticle`, `AboutPage`, `FAQPage`)
 
 The look is a dark, editorial space theme with a live pipeline in the footer and a
 draggable Taurus constellation as an easter egg. There are four pages: the Ask

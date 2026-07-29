@@ -6,10 +6,19 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
 
-  modules: ['@nuxt/eslint', '@nuxt/image', '@nuxt/fonts', 'shadcn-nuxt'],
+  modules: ['@nuxt/eslint', '@nuxt/image', '@nuxt/fonts', 'shadcn-nuxt', 'nuxt-schema-org'],
 
   // Global stylesheet: Tailwind v4 entry + design tokens.
   css: ['~/assets/css/tailwind.css'],
+
+  // Canonical site identity; nuxt-schema-org uses it to emit default WebSite +
+  // WebPage JSON-LD on every page. Same URL that public/ (sitemap, robots) hardcodes.
+  site: {
+    url: 'https://nuxt-rag.netlify.app',
+    name: 'APOD Ask',
+    description:
+      "Natural-language search across NASA's Astronomy Picture of the Day, answers grounded in real APOD descriptions, with the source images."
+  },
 
   runtimeConfig: {
     // Server-only secrets, never sent to the browser.

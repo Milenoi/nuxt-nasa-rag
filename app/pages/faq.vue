@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // FAQ: the questions a first-time visitor is likely to have, in a shadcn accordion.
 // Copy comes from /api/content (faq block); the same items also feed a FAQPage
-// JSON-LD block so the answers are rich-result eligible, with no duplicate content.
+// JSON-LD block (via nuxt-schema-org) so the answers are rich-result eligible.
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 
 const { data: content } = await useFetch('/api/content', { key: 'content' })
@@ -12,22 +12,18 @@ useSeoMeta({
   description: () => content.value?.seo?.faq?.description
 })
 
-// FAQPage structured data, built from the same items the page renders.
-const faqJsonLd = computed(() =>
-  JSON.stringify({
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
+// Mark the page as a FAQPage and feed its questions from the same items rendered
+// below, so there is no duplicate content to maintain.
+useSchemaOrg([
+  defineWebPage({
+    '@type': ['WebPage', 'FAQPage'],
     mainEntity: (faq.value?.items ?? []).map((item) => ({
       '@type': 'Question',
       name: item.q,
       acceptedAnswer: { '@type': 'Answer', text: item.link ? `${item.a} ${item.link.url}` : item.a }
     }))
   })
-)
-
-useHead(() => ({
-  script: [{ type: 'application/ld+json', innerHTML: faqJsonLd.value }]
-}))
+])
 </script>
 
 <template>

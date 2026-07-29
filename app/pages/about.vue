@@ -10,6 +10,9 @@ useSeoMeta({
   title: () => content.value?.seo?.about?.title,
   description: () => content.value?.seo?.about?.description
 })
+
+// Mark this as an AboutPage on top of the default WebPage node.
+useSchemaOrg([defineWebPage({ '@type': 'AboutPage' })])
 </script>
 
 <template>

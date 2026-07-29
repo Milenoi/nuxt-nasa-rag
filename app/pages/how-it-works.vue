@@ -13,6 +13,15 @@ useSeoMeta({
   description: () => content.value?.seo?.howItWorks?.description
 })
 
+// This page is an explainer, so mark it as a TechArticle.
+useSchemaOrg([
+  defineArticle({
+    '@type': 'TechArticle',
+    headline: hw.value?.heading,
+    description: content.value?.seo?.howItWorks?.description
+  })
+])
+
 // Node accent per pipeline stage, matching the footer pipeline colours.
 const palette: Record<string, { border: string; text: string }> = {
   cyan: { border: 'border-accent-cyan/40', text: 'text-accent-cyan' },
