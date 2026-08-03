@@ -40,7 +40,9 @@ in-character voice (off = cool and factual). Both sync to the URL for sharing.
   page cannot be forgotten (the old hand-written `public/sitemap.xml` had missed `/faq`)
 - **Social previews**: `og:image` is the newest NASA-owned APOD still, cropped to
   1200x630 by the image CDN. Pictures by photographers are skipped, since only NASA's
-  own work is free to reuse as the site's preview
+  own work is free to reuse as the site's preview. A shared result link (`/?q=...`)
+  shows the picture of its own top match, resolved server-side without spending a
+  Gemini answer on the crawler
 
 The look is a dark, editorial space theme with a live pipeline in the footer and a
 draggable Taurus constellation as an easter egg. There are four pages: the Ask
@@ -146,6 +148,9 @@ The suite runs the core with fake adapters (no network), grouped by area:
 - **Preview image** (`resolveApodPreview`): picks the newest entry, skips videos and
   anything with a `copyright` holder, and returns null when the window holds nothing
   reusable.
+- **Shared link preview** (`resolveSharePreview`): embeds the question, takes the top
+  match, re-checks ownership for that day, and falls back to null for a weak match, a
+  video, a photographer's picture, or a blank question (no embedding call at all).
 - **UI helpers** (`media`, `describeError`, `shareQuery`): the small client-side utils.
 
 ## Environment variables

@@ -5,13 +5,37 @@
 // view, and the pipeline footer mirrors `status` via useAskStatus().
 const { ask, suggest, seo } = useContent()
 
+// A shared result link (?q=) gets the picture of its own top match instead of the
+// site's generic preview, resolved server-side because crawlers run no JavaScript and
+// the search itself only runs onMounted. Retrieval only, so no Gemini answer is spent
+// on a crawler; null whenever the match is a photographer's work (see the use case).
+const route = useRoute()
+const sharedQuestion = computed(() => (typeof route.query.q === 'string' ? route.query.q.trim() : ''))
+const { data: sharePreview } = await useFetch('/api/share-preview', {
+  query: { q: sharedQuestion },
+  immediate: Boolean(sharedQuestion.value),
+  default: () => null
+})
+
+const img = useImage()
+const site = useSiteConfig()
+const shareImage = computed(() =>
+  sharePreview.value?.url
+    ? new URL(img(sharePreview.value.url, { width: 1200, height: 630, fit: 'cover' }), site.url).toString()
+    : undefined
+)
+
 // The og:* pair is set explicitly: useSeoMeta does not mirror title/description into
-// them, so without this every shared link would show the site-wide default.
+// them, so without this every shared link would show the site-wide default. Leaving a
+// value undefined keeps what app.vue set, which is how the default preview survives.
 useSeoMeta({
   title: () => seo.value?.index?.title,
   description: () => seo.value?.index?.description,
-  ogTitle: () => seo.value?.index?.title,
-  ogDescription: () => seo.value?.index?.description
+  ogTitle: () => sharedQuestion.value || seo.value?.index?.title,
+  ogDescription: () => seo.value?.index?.description,
+  ogImage: () => shareImage.value,
+  ogImageAlt: () => sharePreview.value?.title,
+  twitterImage: () => shareImage.value
 })
 
 const {
