@@ -9,8 +9,12 @@ const faq = computed(() => content.value?.faq)
 
 useSeoMeta({
   title: () => content.value?.seo?.faq?.title,
-  description: () => content.value?.seo?.faq?.description
+  description: () => content.value?.seo?.faq?.description,
+  ogTitle: () => content.value?.seo?.faq?.title,
+  ogDescription: () => content.value?.seo?.faq?.description
 })
+
+defineOgImage('Apod', { page: 'faq' })
 
 // Mark the page as a FAQPage and feed its questions from the same items rendered
 // below, so there is no duplicate content to maintain.

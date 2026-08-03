@@ -6,7 +6,14 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
 
-  modules: ['@nuxt/eslint', '@nuxt/image', '@nuxt/fonts', 'shadcn-nuxt', 'nuxt-schema-org'],
+  modules: [
+    '@nuxt/eslint',
+    '@nuxt/image',
+    '@nuxt/fonts',
+    'shadcn-nuxt',
+    'nuxt-schema-org',
+    'nuxt-og-image'
+  ],
 
   // Global stylesheet: Tailwind v4 entry + design tokens.
   css: ['~/assets/css/tailwind.css'],
@@ -40,17 +47,23 @@ export default defineNuxtConfig({
   // getImageConfig), keeps sharp/IPX out of the serverless function.
   image: imageConfig,
 
-  // Fonts are referenced via CSS custom properties (var(--font-sans) …), which
-  // @nuxt/fonts cannot detect through the indirection, so list them explicitly to
-  // self-host them. They use font-display: swap, so they never block rendering; a
-  // rel=preload is deliberately NOT forced: the module can't attribute a preload to
-  // the render through the var() indirection, and the Ask page's LCP is the hero
-  // image (already preloaded as an image), not text.
+  ogImage: {
+    // 1.91:1, what Facebook, LinkedIn and Slack crop to. The module defaults to 1200x600.
+    defaults: { width: 1200, height: 630 },
+    // Without a stable secret the module signs URLs with a per-build one, so every
+    // deploy would invalidate the previews the networks have already cached.
+    security: { secret: process.env.NUXT_OG_IMAGE_SECRET }
+  },
+
+  // Listed explicitly because @nuxt/fonts cannot detect families used through the
+  // var(--font-sans) indirection. No rel=preload is forced: it can't be attributed
+  // through that same indirection, and the Ask page's LCP is the hero image, not text.
+  // global: true also hands the font data to nuxt-og-image's renderer.
   fonts: {
     families: [
-      { name: 'Inter', weights: [300, 400, 500, 600] },
+      { name: 'Inter', weights: [300, 400, 500, 600], global: true },
       { name: 'Spectral', weights: [300, 400] },
-      { name: 'Roboto Mono', weights: [400, 500] }
+      { name: 'Roboto Mono', weights: [400, 500], global: true }
     ]
   },
 
@@ -86,6 +99,8 @@ export default defineNuxtConfig({
           content: 'Ask astronomy questions, get answers grounded in real NASA APOD texts.'
         },
         { property: 'og:type', content: 'website' },
+        { property: 'og:site_name', content: 'APOD Ask' },
+        // Backed by a real image again: nuxt-og-image renders og:image per page.
         { name: 'twitter:card', content: 'summary_large_image' }
       ],
       link: [

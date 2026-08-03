@@ -1,16 +1,20 @@
 <script setup lang="ts">
-// The Ask page: the RAG front end. A question goes to POST /api/ask, which embeds
-// it, retrieves the closest APOD texts by cosine similarity, and has Gemini write a
-// grounded answer. Five states drive the whole UI (idle → loading → answer / empty /
-// error), plus the optional Smart-search "did you mean?" step. All the interaction
-// lives in useAsk(); this file only routes the current state to the matching view.
-// The pipeline footer mirrors `status` via useAskStatus().
+// The Ask page: a question goes to POST /api/ask, which embeds it, retrieves the
+// closest APOD texts by cosine similarity, and has Gemini write a grounded answer.
+// All interaction lives in useAsk(); this file only routes the current state to a
+// view, and the pipeline footer mirrors `status` via useAskStatus().
 const { ask, suggest, seo } = useContent()
 
+// The og:* pair is set explicitly: useSeoMeta does not mirror title/description into
+// them, so without this every shared link would show the site-wide default.
 useSeoMeta({
   title: () => seo.value?.index?.title,
-  description: () => seo.value?.index?.description
+  description: () => seo.value?.index?.description,
+  ogTitle: () => seo.value?.index?.title,
+  ogDescription: () => seo.value?.index?.description
 })
+
+defineOgImage('Apod', { page: 'index' })
 
 const {
   query,

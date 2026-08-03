@@ -10,8 +10,12 @@ const sibling = computed(() => content.value?.sibling)
 
 useSeoMeta({
   title: () => content.value?.seo?.howItWorks?.title,
-  description: () => content.value?.seo?.howItWorks?.description
+  description: () => content.value?.seo?.howItWorks?.description,
+  ogTitle: () => content.value?.seo?.howItWorks?.title,
+  ogDescription: () => content.value?.seo?.howItWorks?.description
 })
+
+defineOgImage('Apod', { page: 'howItWorks' })
 
 // This page is an explainer, so mark it as a TechArticle.
 useSchemaOrg([

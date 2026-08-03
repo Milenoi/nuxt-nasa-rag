@@ -8,8 +8,12 @@ const githubUrl = computed(() => content.value?.header?.githubUrl)
 
 useSeoMeta({
   title: () => content.value?.seo?.about?.title,
-  description: () => content.value?.seo?.about?.description
+  description: () => content.value?.seo?.about?.description,
+  ogTitle: () => content.value?.seo?.about?.title,
+  ogDescription: () => content.value?.seo?.about?.description
 })
+
+defineOgImage('Apod', { page: 'about' })
 
 // Mark this as an AboutPage on top of the default WebPage node.
 useSchemaOrg([defineWebPage({ '@type': 'AboutPage' })])

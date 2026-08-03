@@ -2,9 +2,17 @@
 // Root: a thin top loading bar during route changes (like the sibling site),
 // then the default layout wraps every page.
 
-// Site-wide Schema.org: nuxt-schema-org auto-emits WebSite + WebPage on every page
-// from the site config. Here we enrich the WebSite node with a SearchAction so search
-// engines know the Ask page takes a query via ?q=.
+// Central because they only ever differ by the current path, and a shared link
+// without og:url can get folded into the wrong entry by crawlers.
+const route = useRoute()
+const site = useSiteConfig()
+const pageUrl = computed(() => new URL(route.path, site.url).toString())
+
+useSeoMeta({ ogUrl: pageUrl })
+useHead({ link: [{ rel: 'canonical', href: pageUrl }] })
+
+// nuxt-schema-org auto-emits WebSite + WebPage from the site config; the SearchAction
+// tells search engines the Ask page takes a query via ?q=.
 useSchemaOrg([
   defineWebSite({
     potentialAction: {
