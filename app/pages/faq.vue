@@ -14,8 +14,6 @@ useSeoMeta({
   ogDescription: () => content.value?.seo?.faq?.description
 })
 
-defineOgImage('Apod', { page: 'faq' })
-
 // Mark the page as a FAQPage and feed its questions from the same items rendered
 // below, so there is no duplicate content to maintain.
 useSchemaOrg([

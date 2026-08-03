@@ -12,23 +12,25 @@ export default defineEventHandler(() => {
     // Per-page SEO copy (title + meta description), fed into useSeoMeta on each page
     // so no page hard-codes its own head tags. The i18n home for meta text too.
     seo: {
+      // Titles aim for 50 to 60 characters: shorter wastes the SERP line, longer is
+      // truncated. The brand stays in front so the four pages read as one site.
       index: {
-        title: 'APOD Ask: ask the stars',
+        title: 'APOD Ask: grounded answers from NASA\'s APOD archive',
         description:
           'Ask an astronomy question and get an answer grounded in real NASA Astronomy Picture of the Day descriptions, with the source images.'
       },
       howItWorks: {
-        title: 'How it works | APOD Ask',
+        title: 'How it works: embed, retrieve, generate | APOD Ask',
         description:
           'How APOD Ask turns a question into a grounded answer: embed, retrieve, rank, generate. Retrieval you can actually see.'
       },
       about: {
-        title: 'About | APOD Ask',
+        title: 'About: a hands-on RAG learning project | APOD Ask',
         description:
           'A hands-on RAG learning project over NASA APOD: Google Gemini embeddings, an Upstash vector store, and grounded Gemini answers, built from the ground up to learn how RAG works.'
       },
       faq: {
-        title: 'FAQ | APOD Ask',
+        title: 'FAQ: what you can ask and how RAG works | APOD Ask',
         description:
           'Answers to common questions about APOD Ask: what you can ask, what RAG is, why it sometimes shows only closest matches, and how Smart search and Star Trek mode work.'
       }

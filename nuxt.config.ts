@@ -12,7 +12,7 @@ export default defineNuxtConfig({
     '@nuxt/fonts',
     'shadcn-nuxt',
     'nuxt-schema-org',
-    'nuxt-og-image'
+    '@nuxtjs/sitemap'
   ],
 
   // Global stylesheet: Tailwind v4 entry + design tokens.
@@ -47,23 +47,14 @@ export default defineNuxtConfig({
   // getImageConfig), keeps sharp/IPX out of the serverless function.
   image: imageConfig,
 
-  ogImage: {
-    // 1.91:1, what Facebook, LinkedIn and Slack crop to. The module defaults to 1200x600.
-    defaults: { width: 1200, height: 630 },
-    // Without a stable secret the module signs URLs with a per-build one, so every
-    // deploy would invalidate the previews the networks have already cached.
-    security: { secret: process.env.NUXT_OG_IMAGE_SECRET }
-  },
-
   // Listed explicitly because @nuxt/fonts cannot detect families used through the
   // var(--font-sans) indirection. No rel=preload is forced: it can't be attributed
   // through that same indirection, and the Ask page's LCP is the hero image, not text.
-  // global: true also hands the font data to nuxt-og-image's renderer.
   fonts: {
     families: [
-      { name: 'Inter', weights: [300, 400, 500, 600], global: true },
+      { name: 'Inter', weights: [300, 400, 500, 600] },
       { name: 'Spectral', weights: [300, 400] },
-      { name: 'Roboto Mono', weights: [400, 500], global: true }
+      { name: 'Roboto Mono', weights: [400, 500] }
     ]
   },
 
@@ -100,8 +91,9 @@ export default defineNuxtConfig({
         },
         { property: 'og:type', content: 'website' },
         { property: 'og:site_name', content: 'APOD Ask' },
-        // Backed by a real image again: nuxt-og-image renders og:image per page.
-        { name: 'twitter:card', content: 'summary_large_image' }
+        // Only a fallback: app.vue upgrades this to summary_large_image whenever an
+        // APOD preview image is actually available.
+        { name: 'twitter:card', content: 'summary' }
       ],
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },

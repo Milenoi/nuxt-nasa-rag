@@ -14,8 +14,6 @@ useSeoMeta({
   ogDescription: () => seo.value?.index?.description
 })
 
-defineOgImage('Apod', { page: 'index' })
-
 const {
   query,
   queryEcho,

@@ -13,8 +13,6 @@ useSeoMeta({
   ogDescription: () => content.value?.seo?.about?.description
 })
 
-defineOgImage('Apod', { page: 'about' })
-
 // Mark this as an AboutPage on top of the default WebPage node.
 useSchemaOrg([defineWebPage({ '@type': 'AboutPage' })])
 </script>

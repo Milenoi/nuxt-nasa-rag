@@ -36,8 +36,11 @@ in-character voice (off = cool and factual). Both sync to the URL for sharing.
 - **Tailwind CSS v4** + **shadcn-vue**, hosted on **Netlify**
 - **Schema.org structured data** on every page (`nuxt-schema-org`): a `WebSite` with a
   search action, plus per-page types (`TechArticle`, `AboutPage`, `FAQPage`)
-- **Social previews** (`nuxt-og-image`): each page renders its own 1200x630 card from
-  a Vue component, with its title and description taken from the same `/api/content`
+- **Sitemap** (`@nuxtjs/sitemap`): generated from the routes at build time, so a new
+  page cannot be forgotten (the old hand-written `public/sitemap.xml` had missed `/faq`)
+- **Social previews**: `og:image` is the newest NASA-owned APOD still, cropped to
+  1200x630 by the image CDN. Pictures by photographers are skipped, since only NASA's
+  own work is free to reuse as the site's preview
 
 The look is a dark, editorial space theme with a live pipeline in the footer and a
 draggable Taurus constellation as an easter egg. There are four pages: the Ask
@@ -140,6 +143,9 @@ The suite runs the core with fake adapters (no network), grouped by area:
   status is sanitised to 502, and the failure is logged server-side.
 - **Type contract** (`askContract`): the shared Zod schemas accept a valid response
   and reject a malformed one (wrong state, missing field).
+- **Preview image** (`resolveApodPreview`): picks the newest entry, skips videos and
+  anything with a `copyright` holder, and returns null when the window holds nothing
+  reusable.
 - **UI helpers** (`media`, `describeError`, `shareQuery`): the small client-side utils.
 
 ## Environment variables
@@ -154,7 +160,6 @@ read server-side, never exposed to the browser).
 | `GEMINI_API_KEY` | Embeddings and the grounded answer (the "generation" in RAG). Used server-side. | Free tier, no credit card: <https://aistudio.google.com/apikey> |
 | `UPSTASH_VECTOR_REST_URL` | REST endpoint of the Upstash Vector index (retrieval + ingest). | Free tier: <https://console.upstash.com/> |
 | `UPSTASH_VECTOR_REST_TOKEN` | Read/write token for the Upstash Vector index (the ingest needs write). | Same index dashboard in the Upstash console |
-| `NUXT_OG_IMAGE_SECRET` | Signs the generated OG image URLs. Set the same value in Netlify, otherwise every deploy changes the URLs and the previews the networks cached go stale. | `openssl rand -hex 32` |
 
 ```bash
 NASA_API_KEY=your_nasa_key_here
@@ -162,7 +167,6 @@ NUXT_NASA_APOD_API_URL=https://api.nasa.gov/planetary/apod
 GEMINI_API_KEY=your_gemini_key_here
 UPSTASH_VECTOR_REST_URL=your_upstash_url_here
 UPSTASH_VECTOR_REST_TOKEN=your_upstash_token_here
-NUXT_OG_IMAGE_SECRET=your_generated_secret_here
 ```
 
 ## Note

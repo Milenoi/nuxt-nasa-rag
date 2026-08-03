@@ -15,6 +15,7 @@ interface NasaApodDto {
     explanation: string
     media_type: string
     thumbnail_url?: string
+    copyright?: string
 }
 
 function toEntry(dto: NasaApodDto): ApodEntry {
@@ -24,7 +25,8 @@ function toEntry(dto: NasaApodDto): ApodEntry {
         url: dto.url,
         explanation: dto.explanation,
         mediaType: dto.media_type === 'image' || dto.media_type === 'video' ? dto.media_type : 'other',
-        thumbnailUrl: dto.thumbnail_url
+        thumbnailUrl: dto.thumbnail_url,
+        copyright: dto.copyright
     }
 }
 

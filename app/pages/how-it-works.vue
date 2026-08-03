@@ -15,8 +15,6 @@ useSeoMeta({
   ogDescription: () => content.value?.seo?.howItWorks?.description
 })
 
-defineOgImage('Apod', { page: 'howItWorks' })
-
 // This page is an explainer, so mark it as a TechArticle.
 useSchemaOrg([
   defineArticle({
