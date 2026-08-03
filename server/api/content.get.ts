@@ -17,7 +17,7 @@ export default defineEventHandler(() => {
       index: {
         title: 'APOD Ask: grounded answers from NASA\'s APOD archive',
         description:
-          'Ask an astronomy question and get an answer grounded in real NASA Astronomy Picture of the Day descriptions, with the source images.'
+          'Ask an astronomy question and get an answer grounded in real NASA Astronomy Picture of the Day texts, with the sources.'
       },
       howItWorks: {
         title: 'How it works: embed, retrieve, generate | APOD Ask',
@@ -27,12 +27,12 @@ export default defineEventHandler(() => {
       about: {
         title: 'About: a hands-on RAG learning project | APOD Ask',
         description:
-          'A hands-on RAG learning project over NASA APOD: Google Gemini embeddings, an Upstash vector store, and grounded Gemini answers, built from the ground up to learn how RAG works.'
+          'A hands-on RAG project over NASA APOD: Gemini embeddings, an Upstash vector store, and answers grounded in real APOD texts.'
       },
       faq: {
         title: 'FAQ: what you can ask and how RAG works | APOD Ask',
         description:
-          'Answers to common questions about APOD Ask: what you can ask, what RAG is, why it sometimes shows only closest matches, and how Smart search and Star Trek mode work.'
+          'What you can ask, what RAG is, why you sometimes only get closest matches, and how Smart search and Star Trek mode work.'
       }
     },
     header: {
