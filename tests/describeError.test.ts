@@ -16,6 +16,17 @@ describe('describeError', () => {
         expect(describeError({ data: { reason: 'rate limit reached' } })).toMatch(/free-tier limit/i)
     })
 
+    it('calls a 503 a temporary overload, since retrying it actually helps', () => {
+        expect(describeError({ statusCode: 503 })).toMatch(/busy|demand|moment/i)
+        expect(describeError({ statusCode: 503 })).not.toMatch(/free-tier limit/i)
+    })
+
+    it('does not mistake the 503 wording for the quota case', () => {
+        expect(describeError({ statusCode: 503, message: 'Upstream gemini-generate failed (503)' })).toMatch(
+            /busy|demand|moment/i
+        )
+    })
+
     it('reports other HTTP status codes with the number', () => {
         expect(describeError({ statusCode: 500 })).toBe('The answer service failed (HTTP 500).')
     })

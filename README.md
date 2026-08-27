@@ -141,8 +141,10 @@ The suite runs the core with fake adapters (no network), grouped by area:
   use case over fake ports.
 - **NASA adapter** (`nasaApodCatalog`): window splitting over a mocked `fetch`, the
   retry policy (429/503 retried, 400 not) and the snake_case to domain mapping.
-- **Error boundary** (`upstreamError`): a 429 passes through, any other upstream
-  status is sanitised to 502, and the failure is logged server-side.
+- **Error boundary** (`upstreamError`): a busy upstream (500/503/504) is retried
+  with a short backoff while a 429, a 400 and a schema mismatch are not; 429 and 503
+  pass through to the client, any other status is sanitised to 502, and the failure
+  is logged server-side.
 - **Type contract** (`askContract`): the shared Zod schemas accept a valid response
   and reject a malformed one (wrong state, missing field).
 - **Preview image** (`resolveApodPreview`): picks the newest entry, skips videos and
