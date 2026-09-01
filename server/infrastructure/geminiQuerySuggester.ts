@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai'
 import type { QuerySuggester } from '../usecases/ports/gateways'
+import { GEMINI_TEXT_MODEL } from './geminiLanguageModel'
 import { runUpstream } from './upstreamError'
 
 // QuerySuggester adapter for Gemini: proposes corrected astronomy search queries
@@ -14,7 +15,7 @@ export function geminiQuerySuggester(apiKey: string): QuerySuggester {
 Input: ${question}`
             const response = await runUpstream('gemini-suggest', () =>
                 ai.models.generateContent({
-                    model: 'gemini-flash-latest',
+                    model: GEMINI_TEXT_MODEL,
                     contents: prompt
                 })
             )

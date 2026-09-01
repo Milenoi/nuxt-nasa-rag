@@ -30,7 +30,7 @@ in-character voice (off = cool and factual). Both sync to the URL for sharing.
 
 - **Nuxt 4 + Vue** with **Nitro** server routes (keys and AI logic stay server-side)
 - **Google Gemini** for embeddings (`gemini-embedding-001`, multilingual) and the
-  grounded answer (`gemini-flash-latest`, a structured JSON reply validated with Zod)
+  grounded answer (`gemini-3.6-flash`, a structured JSON reply validated with Zod)
 - **Upstash Vector** as the vector store
 - **@nuxt/image** for AVIF/WebP images through the Netlify Image CDN
 - **Tailwind CSS v4** + **shadcn-vue**, hosted on **Netlify**

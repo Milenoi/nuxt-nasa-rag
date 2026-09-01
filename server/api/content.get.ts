@@ -209,7 +209,7 @@ export default defineEventHandler(() => {
         { label: 'Framework', value: 'Nuxt 4 + Vue, Nitro server routes' },
         { label: 'Embeddings', value: 'Google Gemini: gemini-embedding-001 (multilingual, 768-dim)' },
         { label: 'Vector store', value: 'Upstash Vector (was hand-written cosine over JSON first)' },
-        { label: 'Language model', value: 'Google Gemini: gemini-flash-latest (free tier), structured JSON output validated with Zod' },
+        { label: 'Language model', value: 'Google Gemini: gemini-3.6-flash (free tier), structured JSON output validated with Zod' },
         { label: 'Data', value: 'NASA Astronomy Picture of the Day API' },
         { label: 'Ingest', value: 'Manual backfill script + a daily Netlify function' },
         { label: 'Hosting', value: 'Netlify' }
