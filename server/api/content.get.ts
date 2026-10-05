@@ -242,8 +242,8 @@ export default defineEventHandler(() => {
         },
         {
           q: 'Why NASA?',
-          a: 'Honestly, because NASA\'s open APIs are a genuine pleasure to work with. You get a free API key in seconds, with no approval process and no credit card, and the Astronomy Picture of the Day feed was a perfect fit for a small demo: real, well-written explanations, each paired with a striking image. Get your own key at',
-          link: { url: 'https://api.nasa.gov/', label: 'api.nasa.gov' }
+          a: 'Honestly, because NASA\'s open data is a genuine pleasure to work with. The Astronomy Picture of the Day archive needs no key, no approval process and no credit card, and it was a perfect fit for a small demo: real, well-written explanations, each paired with a striking image. Browse it yourself at',
+          link: { url: 'https://science.nasa.gov/apod/', label: 'science.nasa.gov/apod' }
         },
         {
           q: 'Why do I sometimes get no direct answer, just closest matches?',

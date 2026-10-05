@@ -1,5 +1,5 @@
 import 'dotenv/config'
-import { loadRagConfig, loadNasaConfig } from '../server/infrastructure/config'
+import { loadRagConfig } from '../server/infrastructure/config'
 import { geminiEmbedder } from '../server/infrastructure/geminiEmbedder'
 import { nasaApodCatalog } from '../server/infrastructure/nasaApodCatalog'
 import { upstashKnowledgeIndex } from '../server/infrastructure/upstashKnowledgeIndex'
@@ -11,7 +11,6 @@ const toIso = (d: Date) => d.toISOString().slice(0, 10)
 
 async function main() {
     const config = loadRagConfig()
-    const nasa = loadNasaConfig()
 
     const today = new Date()
     const start = new Date()
@@ -19,7 +18,7 @@ async function main() {
 
     // Composition root: build the adapters, run the use case over the whole span.
     const report = await ingestApodRange(toIso(start), toIso(today), {
-        catalog: nasaApodCatalog(nasa.apiKey, nasa.apodUrl),
+        catalog: nasaApodCatalog(),
         embedder: geminiEmbedder(config.geminiApiKey),
         index: upstashKnowledgeIndex(config.upstashUrl, config.upstashToken)
     }, {

@@ -1,4 +1,4 @@
-import { loadNasaConfig, loadRagConfig } from '../infrastructure/config'
+import { loadRagConfig } from '../infrastructure/config'
 import { resolveSharePreview } from '../usecases/resolveSharePreview'
 import { geminiEmbedder } from '../infrastructure/geminiEmbedder'
 import { upstashVectorStore } from '../infrastructure/upstashVectorStore'
@@ -13,11 +13,10 @@ export default defineCachedEventHandler(
         if (typeof question !== 'string' || !question.trim()) return null
         try {
             const rag = loadRagConfig()
-            const nasa = loadNasaConfig()
             return await resolveSharePreview(question, {
                 embedder: geminiEmbedder(rag.geminiApiKey),
                 vectorStore: upstashVectorStore(rag.upstashUrl, rag.upstashToken),
-                catalog: nasaApodCatalog(nasa.apiKey, nasa.apodUrl)
+                catalog: nasaApodCatalog()
             })
         } catch (err) {
             // Never toHttpError: a missing preview must not break the shared page.

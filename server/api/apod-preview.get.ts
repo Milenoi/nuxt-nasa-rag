@@ -1,4 +1,3 @@
-import { loadNasaConfig } from '../infrastructure/config'
 import { resolveApodPreview } from '../usecases/resolveApodPreview'
 import { nasaApodCatalog } from '../infrastructure/nasaApodCatalog'
 
@@ -9,13 +8,12 @@ export default defineCachedEventHandler(
     async (): Promise<{ url: string; date: string; title: string } | null> => {
         const today = new Date().toISOString().slice(0, 10)
         try {
-            const config = loadNasaConfig()
             return await resolveApodPreview(today, {
-                catalog: nasaApodCatalog(config.apiKey, config.apodUrl)
+                catalog: nasaApodCatalog()
             })
         } catch (err) {
             // Deliberately not toHttpError: a missing preview image must never break a
-            // page, so a NASA outage or an unset key degrades to no og:image.
+            // page, so a NASA outage degrades to no og:image.
             console.error('[apod-preview] falling back to no preview image:', err)
             return null
         }

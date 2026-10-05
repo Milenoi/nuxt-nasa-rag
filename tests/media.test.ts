@@ -7,7 +7,7 @@ function makeSource(overrides: Partial<Source> = {}): Source {
     return {
         date: '2024-01-01',
         title: 'Test',
-        imageUrl: 'https://apod.nasa.gov/still.jpg',
+        imageUrl: 'https://assets.science.nasa.gov/still.jpg',
         explanation: '',
         score: 0.8,
         ...overrides
@@ -39,7 +39,7 @@ describe('isFileVideo', () => {
 
     it('does not match YouTube embeds or stills', () => {
         expect(isFileVideo('https://www.youtube.com/embed/abc123')).toBe(false)
-        expect(isFileVideo('https://apod.nasa.gov/still.jpg')).toBe(false)
+        expect(isFileVideo('https://assets.science.nasa.gov/still.jpg')).toBe(false)
     })
 
     it('does not match a mid-url extension without a boundary', () => {

@@ -16,17 +16,3 @@ export function loadRagConfig(): RagConfig {
     if (!upstashUrl || !upstashToken) throw new Error('UPSTASH_VECTOR_REST_URL / UPSTASH_VECTOR_REST_TOKEN is not set')
     return { geminiApiKey, upstashUrl, upstashToken }
 }
-
-// NASA APOD access, needed only by the ingest paths (not the query path).
-export interface NasaConfig {
-    apiKey: string
-    apodUrl: string
-}
-
-export function loadNasaConfig(): NasaConfig {
-    const apiKey = process.env.NASA_API_KEY
-    const apodUrl = process.env.NUXT_NASA_APOD_API_URL
-    if (!apiKey) throw new Error('NASA_API_KEY is not set')
-    if (!apodUrl) throw new Error('NUXT_NASA_APOD_API_URL is not set')
-    return { apiKey, apodUrl }
-}

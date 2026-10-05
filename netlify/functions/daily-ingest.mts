@@ -1,4 +1,4 @@
-import { loadRagConfig, loadNasaConfig } from '../../server/infrastructure/config'
+import { loadRagConfig } from '../../server/infrastructure/config'
 import { geminiEmbedder } from '../../server/infrastructure/geminiEmbedder'
 import { nasaApodCatalog } from '../../server/infrastructure/nasaApodCatalog'
 import { upstashKnowledgeIndex } from '../../server/infrastructure/upstashKnowledgeIndex'
@@ -10,12 +10,11 @@ const toIso = (d: Date) => d.toISOString().slice(0, 10)
 // a one-day range and no onBatch (there is only one entry, so nothing to pace).
 export default async () => {
     const config = loadRagConfig()
-    const nasa = loadNasaConfig()
     const today = toIso(new Date())
 
     try {
         const report = await ingestApodRange(today, today, {
-            catalog: nasaApodCatalog(nasa.apiKey, nasa.apodUrl),
+            catalog: nasaApodCatalog(),
             embedder: geminiEmbedder(config.geminiApiKey),
             index: upstashKnowledgeIndex(config.upstashUrl, config.upstashToken)
         })

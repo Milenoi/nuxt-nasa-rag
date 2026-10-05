@@ -139,8 +139,9 @@ The suite runs the core with fake adapters (no network), grouped by area:
 - **Suggestions** (`suggestQueries`): the "did you mean?" cleanup.
 - **Eval metrics** (`evaluateRetrieval`): `reciprocalRank`, `recallAtK`, `mrr` and the
   use case over fake ports.
-- **NASA adapter** (`nasaApodCatalog`): window splitting over a mocked `fetch`, the
-  retry policy (429/503 retried, 400 not) and the snake_case to domain mapping.
+- **NASA adapter** (`nasaApodCatalog`): paging over a mocked `fetch`, the retry
+  policy (429/503 retried, 400 not) and the mapping from NASA's HTML fields to the
+  domain entry (media from the page markup, placeholder and lost media dropped).
 - **Error boundary** (`upstreamError`): a busy upstream (500/503/504) is retried
   with a short backoff while a 429, a 400 and a schema mismatch are not; 429 and 503
   pass through to the client, any other status is sanitised to 502, and the failure
@@ -162,19 +163,37 @@ read server-side, never exposed to the browser).
 
 | Variable | What it's for | Where to get it |
 | --- | --- | --- |
-| `NASA_API_KEY` | Fetching APOD entries (text + media) from NASA, used by the ingest script. | Free, instant: <https://api.nasa.gov/> |
-| `NUXT_NASA_APOD_API_URL` | The APOD endpoint URL (`https://api.nasa.gov/planetary/apod`), kept in env so it's easy to change. | (fixed) |
 | `GEMINI_API_KEY` | Embeddings and the grounded answer (the "generation" in RAG). Used server-side. | Free tier, no credit card: <https://aistudio.google.com/apikey> |
 | `UPSTASH_VECTOR_REST_URL` | REST endpoint of the Upstash Vector index (retrieval + ingest). | Free tier: <https://console.upstash.com/> |
 | `UPSTASH_VECTOR_REST_TOKEN` | Read/write token for the Upstash Vector index (the ingest needs write). | Same index dashboard in the Upstash console |
 
 ```bash
-NASA_API_KEY=your_nasa_key_here
-NUXT_NASA_APOD_API_URL=https://api.nasa.gov/planetary/apod
 GEMINI_API_KEY=your_gemini_key_here
 UPSTASH_VECTOR_REST_URL=your_upstash_url_here
 UPSTASH_VECTOR_REST_TOKEN=your_upstash_token_here
 ```
+
+## NASA data source
+
+APOD moved from apod.nasa.gov to science.nasa.gov at the end of September 2026.
+The legacy `api.nasa.gov/planetary/apod` still answers with HTTP 200, but returns
+the NASA logo titled "NASA Science" for every date
+([nasa/apod-api#184](https://github.com/nasa/apod-api/issues/184)), and every old
+`apod.nasa.gov/apod/image/...` URL now redirects to the APOD homepage.
+
+The adapter therefore reads NASA's `apod-basic` endpoint
+(`https://science.nasa.gov/wp-json/wp/v2/apod-basic`), which needs no API key.
+It is not a drop-in replacement, `nasaApodCatalog` bridges the differences:
+
+- `url` is the article link, not the media. The image, video file or YouTube
+  embed is read from the `basic_html` markup.
+- Text fields are HTML. Title, explanation and credit are cleaned to plain text,
+  and the notes after the explanation ("Tomorrow's picture") are dropped, so they
+  never end up in an embedding.
+- Entries without a featured image of their own carry a generic NASA placeholder,
+  which is ignored. A few days lost their media in the migration and are skipped.
+- Dates are `yymmdd` and a page holds at most 25 entries, so three years take 44
+  requests (about 100 seconds).
 
 ## Note
 

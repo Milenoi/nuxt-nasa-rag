@@ -9,7 +9,7 @@ function source(date: string, score: number): RetrievedSource {
     return {
         date,
         title: `APOD ${date}`,
-        imageUrl: `https://apod.nasa.gov/apod/image/${date}-thumb.jpg`,
+        imageUrl: `https://assets.science.nasa.gov/content/dam/science/cds/apod/apod/${date}-thumb.jpg`,
         explanation: 'text',
         mediaType: 'image',
         thumbnailUrl: '',
@@ -21,7 +21,7 @@ function entry(date: string, partial: Partial<ApodEntry> = {}): ApodEntry {
     return {
         date,
         title: `APOD ${date}`,
-        url: `https://apod.nasa.gov/apod/image/${date}.jpg`,
+        url: `https://assets.science.nasa.gov/content/dam/science/cds/apod/apod/${date}.jpg`,
         explanation: 'text',
         mediaType: 'image',
         ...partial
@@ -66,7 +66,7 @@ describe('resolveSharePreview', () => {
         const d = deps([source('2026-07-22', 0.7)], [entry('2026-07-22', { title: 'Corona Australis' })])
         const result = await resolveSharePreview('nebula', d.deps)
         expect(result).toEqual({
-            url: 'https://apod.nasa.gov/apod/image/2026-07-22.jpg',
+            url: 'https://assets.science.nasa.gov/content/dam/science/cds/apod/apod/2026-07-22.jpg',
             date: '2026-07-22',
             title: 'Corona Australis'
         })

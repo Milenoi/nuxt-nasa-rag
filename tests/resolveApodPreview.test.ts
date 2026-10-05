@@ -6,7 +6,7 @@ import type { ApodEntry } from '../server/domain/apod'
 function entry(partial: Partial<ApodEntry> & { date: string }): ApodEntry {
     return {
         title: `APOD ${partial.date}`,
-        url: `https://apod.nasa.gov/apod/image/${partial.date}.jpg`,
+        url: `https://assets.science.nasa.gov/content/dam/science/cds/apod/apod/${partial.date}.jpg`,
         explanation: 'text',
         mediaType: 'image',
         ...partial
@@ -68,8 +68,8 @@ describe('resolveApodPreview', () => {
     })
 
     it('returns the url and title of the picked entry', async () => {
-        const c = catalog([entry({ date: '2026-08-01', title: 'The Ghost Nebula', url: 'https://apod.nasa.gov/apod/image/ghost.jpg' })])
+        const c = catalog([entry({ date: '2026-08-01', title: 'The Ghost Nebula', url: 'https://assets.science.nasa.gov/content/dam/science/cds/apod/apod/ghost.jpg' })])
         const result = await resolveApodPreview('2026-08-03', { catalog: c.catalog })
-        expect(result).toEqual({ date: '2026-08-01', title: 'The Ghost Nebula', url: 'https://apod.nasa.gov/apod/image/ghost.jpg' })
+        expect(result).toEqual({ date: '2026-08-01', title: 'The Ghost Nebula', url: 'https://assets.science.nasa.gov/content/dam/science/cds/apod/apod/ghost.jpg' })
     })
 })

@@ -29,12 +29,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     // Server-only secrets, never sent to the browser.
-    nasaApiKey: process.env.NASA_API_KEY || '',
-    geminiApiKey: process.env.GEMINI_API_KEY || '',
-    public: {
-      // Exposed to the browser, must contain NO secrets.
-      nasaApodApiUrl: process.env.NUXT_NASA_APOD_API_URL || ''
-    }
+    geminiApiKey: process.env.GEMINI_API_KEY || ''
   },
 
   // shadcn-vue: components live under app/components/ui, prefixed with "Ui".
