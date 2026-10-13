@@ -19,7 +19,7 @@ export default defineNuxtConfig({
   css: ['~/assets/css/tailwind.css'],
 
   // Canonical site identity; nuxt-schema-org uses it to emit default WebSite +
-  // WebPage JSON-LD on every page. Same URL that public/ (sitemap, robots) hardcodes.
+  // WebPage JSON-LD on every page. Same URL that public/ (robots, llms.txt) hardcodes.
   site: {
     url: 'https://nuxt-rag.netlify.app',
     name: 'APOD Ask',
