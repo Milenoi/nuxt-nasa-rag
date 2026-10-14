@@ -22,14 +22,12 @@ function statusOf(err: unknown): number {
     return status >= 400 && status < 600 ? status : 502
 }
 
-// Run an external-service call, retrying the handful of statuses that mean "busy,
-// try again" and, on final failure, rethrowing as an UpstreamError tagged with the
-// service + its status. Adapters wrap their SDK calls in this, so the raw SDK error
-// shape never leaves the infrastructure layer.
-export async function runUpstream<T>(service: string, fn: () => Promise<T>): Promise<T> {
+// Retries "busy" statuses, then rethrows as a typed UpstreamError so raw SDK errors never leave
+// infrastructure. fn gets the 1-based attempt, so a retry can go to a fallback model.
+export async function runUpstream<T>(service: string, fn: (attempt: number) => Promise<T>): Promise<T> {
     for (let attempt = 1; ; attempt++) {
         try {
-            return await fn()
+            return await fn(attempt)
         } catch (err) {
             // An adapter deeper down already typed and retried this one.
             if (err instanceof UpstreamError) throw err

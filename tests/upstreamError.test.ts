@@ -95,6 +95,17 @@ describe('runUpstream', () => {
         expect(call).toHaveBeenCalledTimes(2)
     })
 
+    it('passes the attempt number on each retry, so an adapter can fall back to another model', async () => {
+        const call = vi
+            .fn()
+            .mockRejectedValueOnce(sdkError(503, 'high demand'))
+            .mockRejectedValueOnce(sdkError(503, 'high demand'))
+            .mockResolvedValueOnce('answer')
+
+        await expect(settle(runUpstream('gemini-generate', call))).resolves.toBe('answer')
+        expect(call.mock.calls).toEqual([[1], [2], [3]])
+    })
+
     it('gives up after the retry budget and reports the real upstream status', async () => {
         const call = vi.fn().mockRejectedValue(sdkError(503, 'high demand'))
 

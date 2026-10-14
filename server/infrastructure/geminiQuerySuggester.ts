@@ -1,6 +1,6 @@
 import { GoogleGenAI } from '@google/genai'
 import type { QuerySuggester } from '../usecases/ports/gateways'
-import { GEMINI_TEXT_MODEL } from './geminiLanguageModel'
+import { geminiModelFor } from './geminiLanguageModel'
 import { runUpstream } from './upstreamError'
 
 // QuerySuggester adapter for Gemini: proposes corrected astronomy search queries
@@ -13,9 +13,9 @@ export function geminiQuerySuggester(apiKey: string): QuerySuggester {
             const prompt = `Suggest up to 3 corrected astronomy search queries for the input: fix typos and spelling, keep the original meaning, expand only if it clearly helps retrieval. One per line, no numbering, no quotes, no explanation. If the input is already a clean query, return nothing.
 
 Input: ${question}`
-            const response = await runUpstream('gemini-suggest', () =>
+            const response = await runUpstream('gemini-suggest', (attempt) =>
                 ai.models.generateContent({
-                    model: GEMINI_TEXT_MODEL,
+                    model: geminiModelFor(attempt),
                     contents: prompt
                 })
             )

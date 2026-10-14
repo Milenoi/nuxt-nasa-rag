@@ -3,12 +3,13 @@ import { z } from 'zod'
 import type { LanguageModel } from '../usecases/ports/gateways'
 import { runUpstream } from './upstreamError'
 
-// Pinned, not 'gemini-flash-latest'. That alias follows whatever Flash generation
-// Google ships newest, and a fresh one is swamped on the free tier for weeks:
-// gemini-3.7-flash answered every call with 503 UNAVAILABLE while 3.6 served
-// instantly, so the retry burned three attempts on the same busy model. Pinning
-// costs a manual bump when a generation retires, and buys a model that answers.
-export const GEMINI_TEXT_MODEL = 'gemini-3.6-flash'
+// Free tier swamps single Flash models for weeks (3.7 in Sept, 3.6 in Oct: 503 on every call),
+// so each retry moves down this list; the lite models kept answering when flash did not.
+const LAST_RESORT_MODEL = 'gemini-3.1-flash-lite'
+const GEMINI_TEXT_MODELS = ['gemini-3.6-flash', 'gemini-3.5-flash-lite', LAST_RESORT_MODEL] as const
+
+// Attempts beyond the list stay on the last model, never back to the busy first one.
+export const geminiModelFor = (attempt: number) => GEMINI_TEXT_MODELS[attempt - 1] ?? LAST_RESORT_MODEL
 
 // LanguageModel adapter for Gemini. The API key is injected, not read here, so the
 // adapter stays context-free. It turns the injected Zod schema into Gemini's JSON
@@ -19,9 +20,9 @@ export function geminiLanguageModel(apiKey: string): LanguageModel {
     const ai = new GoogleGenAI({ apiKey })
     return {
         async generate<T>(prompt: string, schema: z.ZodType<T>): Promise<T> {
-            return runUpstream('gemini-generate', async () => {
+            return runUpstream('gemini-generate', async (attempt) => {
                 const response = await ai.models.generateContent({
-                    model: GEMINI_TEXT_MODEL,
+                    model: geminiModelFor(attempt),
                     contents: prompt,
                     config: {
                         responseMimeType: 'application/json',

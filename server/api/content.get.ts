@@ -166,7 +166,7 @@ export default defineEventHandler(() => {
           role: 'Answer',
           color: 'green',
           name: 'Generate a grounded answer',
-          desc: "The question and the top texts go to Google Gemini. It used to answer in free text with NONSENSE / NO_MATCH markers parsed by hand, brittle and unable to prove which pictures were used; now it fills a fixed JSON form, checked by a schema, so the reply can't drift and invented citations are dropped. An optional Star Trek toggle changes only the tone, never the facts."
+          desc: "The question and the top texts go to Google Gemini. It used to answer in free text with NONSENSE / NO_MATCH markers parsed by hand, brittle and unable to prove which pictures were used; now it fills a fixed JSON form, checked by a schema, so the reply can't drift and invented citations are dropped. If the model is busy, which happens often on the free tier, the request tries a lighter Gemini model before giving up. An optional Star Trek toggle changes only the tone, never the facts."
         }
       ],
       footnote: 'Built with Nuxt 4 and Google Gemini, a sibling to the',
@@ -209,7 +209,7 @@ export default defineEventHandler(() => {
         { label: 'Framework', value: 'Nuxt 4 + Vue, Nitro server routes' },
         { label: 'Embeddings', value: 'Google Gemini: gemini-embedding-001 (multilingual, 768-dim)' },
         { label: 'Vector store', value: 'Upstash Vector (was hand-written cosine over JSON first)' },
-        { label: 'Language model', value: 'Google Gemini: gemini-3.6-flash (free tier), structured JSON output validated with Zod' },
+        { label: 'Language model', value: 'Google Gemini: gemini-3.6-flash with two flash-lite fallbacks (free tier), structured JSON output validated with Zod' },
         { label: 'Data', value: 'NASA Astronomy Picture of the Day API' },
         { label: 'Ingest', value: 'Manual backfill script + a daily Netlify function' },
         { label: 'Hosting', value: 'Netlify' }
@@ -263,7 +263,7 @@ export default defineEventHandler(() => {
         },
         {
           q: 'Why does it sometimes fail or hit a limit?',
-          a: 'It runs on free API tiers on purpose, so it can reach Google Gemini\'s daily quota. When that happens the site says so honestly instead of faking an answer. Try again later, once the quota resets.'
+          a: 'It runs on free API tiers on purpose. When the main Gemini model is busy, the site switches to a lighter one, so most of those moments pass unnoticed. What it cannot get around is the daily quota: when that is used up, the site says so honestly instead of faking an answer. Try again later, once the quota resets.'
         },
         {
           q: 'What was the motivation behind building something like this?',

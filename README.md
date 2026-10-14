@@ -30,7 +30,8 @@ in-character voice (off = cool and factual). Both sync to the URL for sharing.
 
 - **Nuxt 4 + Vue** with **Nitro** server routes (keys and AI logic stay server-side)
 - **Google Gemini** for embeddings (`gemini-embedding-001`, multilingual) and the
-  grounded answer (`gemini-3.6-flash`, a structured JSON reply validated with Zod)
+  grounded answer (`gemini-3.6-flash`, falling back to `gemini-3.5-flash-lite` and
+  `gemini-3.1-flash-lite` when it is busy; a structured JSON reply validated with Zod)
 - **Upstash Vector** as the vector store
 - **@nuxt/image** for AVIF/WebP images through the Netlify Image CDN
 - **Tailwind CSS v4** + **shadcn-vue**, hosted on **Netlify**
@@ -143,7 +144,9 @@ The suite runs the core with fake adapters (no network), grouped by area:
   policy (429/503 retried, 400 not) and the mapping from NASA's HTML fields to the
   domain entry (media from the page markup, placeholder and lost media dropped).
 - **Error boundary** (`upstreamError`): a busy upstream (500/503/504) is retried
-  with a short backoff while a 429, a 400 and a schema mismatch are not; 429 and 503
+  with a short backoff, and every attempt gets its number, so on a retry the Gemini
+  adapters move on to the next model in their fallback list instead of asking the same
+  busy one again. A 429, a 400 and a schema mismatch are not retried; 429 and 503
   pass through to the client, any other status is sanitised to 502, and the failure
   is logged server-side.
 - **Type contract** (`askContract`): the shared Zod schemas accept a valid response
