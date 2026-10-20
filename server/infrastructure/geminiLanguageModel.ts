@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai'
+import { GoogleGenAI, ThinkingLevel } from '@google/genai'
 import { z } from 'zod'
 import type { LanguageModel } from '../usecases/ports/gateways'
 import { runUpstream } from './upstreamError'
@@ -11,6 +11,10 @@ const GEMINI_TEXT_MODELS = ['gemini-3.6-flash', 'gemini-3.5-flash-lite', LAST_RE
 // Attempts beyond the list stay on the last model, never back to the busy first one.
 export const geminiModelFor = (attempt: number) => GEMINI_TEXT_MODELS[attempt - 1] ?? LAST_RESORT_MODEL
 
+// Answering from five given texts and fixing typos need little reasoning; the default
+// level spent 240 thought tokens on a one-line suggestion, which costs latency.
+export const GEMINI_THINKING = { thinkingLevel: ThinkingLevel.LOW }
+
 // LanguageModel adapter for Gemini. The API key is injected, not read here, so the
 // adapter stays context-free. It turns the injected Zod schema into Gemini's JSON
 // schema, calls the model in JSON mode, and validates the reply with the same
@@ -20,11 +24,13 @@ export function geminiLanguageModel(apiKey: string): LanguageModel {
     const ai = new GoogleGenAI({ apiKey })
     return {
         async generate<T>(prompt: string, schema: z.ZodType<T>): Promise<T> {
-            return runUpstream('gemini-generate', async (attempt) => {
+            return runUpstream('gemini-generate', async (attempt, abortSignal) => {
                 const response = await ai.models.generateContent({
                     model: geminiModelFor(attempt),
                     contents: prompt,
                     config: {
+                        abortSignal,
+                        thinkingConfig: GEMINI_THINKING,
                         responseMimeType: 'application/json',
                         responseJsonSchema: z.toJSONSchema(schema)
                     }

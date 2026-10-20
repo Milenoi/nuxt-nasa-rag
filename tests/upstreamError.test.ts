@@ -34,6 +34,15 @@ describe('toHttpError', () => {
         expect(http.statusMessage).toBe('Upstream gemini-generate failed (503)')
     })
 
+    it('reports a timed-out upstream as 503, so the UI says "busy" rather than "broken"', () => {
+        const http = toHttpError(new UpstreamError('gemini-generate', 504, 'stalled')) as {
+            statusCode: number
+            statusMessage: string
+        }
+        expect(http.statusCode).toBe(503)
+        expect(http.statusMessage).toBe('Upstream gemini-generate failed (504)')
+    })
+
     it('sanitises any other upstream status to 502 (no raw 403/500 leaks out)', () => {
         const http = toHttpError(new UpstreamError('upstash', 403, 'forbidden')) as {
             statusCode: number
@@ -103,7 +112,62 @@ describe('runUpstream', () => {
             .mockResolvedValueOnce('answer')
 
         await expect(settle(runUpstream('gemini-generate', call))).resolves.toBe('answer')
-        expect(call.mock.calls).toEqual([[1], [2], [3]])
+        expect(call.mock.calls.map(([attempt]) => attempt)).toEqual([1, 2, 3])
+    })
+
+    it('aborts an attempt that stalls and retries it as a 504, so a slow model cannot eat the function limit', async () => {
+        const stall = (_attempt: number, signal: AbortSignal) =>
+            new Promise<string>((_resolve, reject) => {
+                signal.addEventListener('abort', () => reject(signal.reason))
+            })
+        const call = vi.fn().mockImplementationOnce(stall).mockResolvedValueOnce('answer')
+
+        await expect(settle(runUpstream('gemini-generate', call))).resolves.toBe('answer')
+        expect(call).toHaveBeenCalledTimes(2)
+        expect(call.mock.calls[0][1].aborted).toBe(true)
+    })
+
+    it('caps each attempt at 8 seconds, no earlier', async () => {
+        let signal: AbortSignal | undefined
+        const call = vi.fn((_attempt: number, s: AbortSignal) => {
+            signal = s
+            return new Promise<string>(() => {})
+        })
+
+        void runUpstream('gemini-generate', call).catch(() => {})
+        await vi.advanceTimersByTimeAsync(7999)
+        expect(signal?.aborted).toBe(false)
+        await vi.advanceTimersByTimeAsync(1)
+        expect(signal?.aborted).toBe(true)
+    })
+
+    it('keeps the real status of a slow failure that ignored the signal, so a late 429 is not retried', async () => {
+        const call = vi.fn(
+            () =>
+                new Promise<string>((_resolve, reject) => {
+                    setTimeout(() => reject(sdkError(429, 'You exceeded your current quota')), 9000)
+                })
+        )
+
+        await expect(settle(runUpstream('gemini-embed', call))).resolves.toMatchObject({ status: 429 })
+        expect(call).toHaveBeenCalledTimes(1)
+    })
+
+    it('leaves no timer behind once an attempt has answered', async () => {
+        await settle(runUpstream('gemini-generate', vi.fn().mockResolvedValue('answer')))
+        expect(vi.getTimerCount()).toBe(0)
+    })
+
+    it('reports a 504 once every attempt has stalled', async () => {
+        const call = vi.fn(
+            (_attempt: number, signal: AbortSignal) =>
+                new Promise<string>((_resolve, reject) => {
+                    signal.addEventListener('abort', () => reject(signal.reason))
+                })
+        )
+
+        await expect(settle(runUpstream('gemini-generate', call))).resolves.toMatchObject({ status: 504 })
+        expect(call).toHaveBeenCalledTimes(3)
     })
 
     it('gives up after the retry budget and reports the real upstream status', async () => {

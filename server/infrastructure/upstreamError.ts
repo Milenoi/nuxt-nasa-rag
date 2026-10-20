@@ -11,6 +11,10 @@ const MAX_ATTEMPTS = 3
 // user an answer, not a background job that can afford minutes.
 const backoffMs = (attempt: number) => attempt * 300
 
+// A busy Gemini model may stall for 30s+ instead of failing fast with 503, past
+// Netlify's function limit. Three attempts at this cap still fit inside it.
+const ATTEMPT_TIMEOUT_MS = 8000
+
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 // Extract an HTTP-ish status from a raw SDK / fetch error (Gemini, Upstash, NASA).
@@ -23,27 +27,37 @@ function statusOf(err: unknown): number {
 }
 
 // Retries "busy" statuses, then rethrows as a typed UpstreamError so raw SDK errors never leave
-// infrastructure. fn gets the 1-based attempt, so a retry can go to a fallback model.
-export async function runUpstream<T>(service: string, fn: (attempt: number) => Promise<T>): Promise<T> {
+// infrastructure. fn gets the 1-based attempt (for model fallback) and a per-attempt abort
+// signal; callers that ignore it run uncapped.
+export async function runUpstream<T>(
+    service: string,
+    fn: (attempt: number, signal: AbortSignal) => Promise<T>
+): Promise<T> {
     for (let attempt = 1; ; attempt++) {
+        const controller = new AbortController()
+        const timer = setTimeout(() => controller.abort(), ATTEMPT_TIMEOUT_MS)
         try {
-            return await fn(attempt)
+            return await fn(attempt, controller.signal)
         } catch (err) {
             // An adapter deeper down already typed and retried this one.
             if (err instanceof UpstreamError) throw err
 
-            const status = statusOf(err)
+            // Both checks: a caller that ignored the signal can still fail late for its own reason.
+            const timedOut = controller.signal.aborted && err instanceof Error && err.name === 'AbortError'
+            const status = timedOut ? 504 : statusOf(err)
             if (!RETRY_STATUSES.includes(status) || attempt >= MAX_ATTEMPTS) {
                 throw new UpstreamError(service, status, `${service} request failed`, err)
             }
             console.warn(`[upstream] ${service} returned ${status}, retry ${attempt}/${MAX_ATTEMPTS - 1}`)
             await sleep(backoffMs(attempt))
+        } finally {
+            clearTimeout(timer)
         }
     }
 }
 
-// Map an UpstreamError to a client HTTP error: 429 (quota) and 503 (upstream busy)
-// pass through, because both are worth retrying and the UI phrases them differently.
+// Map an UpstreamError to a client HTTP error: 429 (quota) and 503 (upstream busy, also
+// a stalled 504) pass through, because both are worth retrying and the UI phrases them differently.
 // Anything else becomes 502 (a server-side upstream problem, not the client's, so no
 // raw 403/500 leaks out). The real service + status stay in statusMessage.
 export function toHttpError(err: unknown) {
@@ -51,7 +65,7 @@ export function toHttpError(err: unknown) {
         // Log server-side so upstream failures are visible in the function logs
         // (service + status). The client only ever sees the sanitised HTTP error.
         console.error(`[upstream] ${err.service} failed with status ${err.status}: ${err.message}`, err.original ?? '')
-        const status = err.status === 429 || err.status === 503 ? err.status : 502
+        const status = err.status === 429 ? 429 : err.status === 503 || err.status === 504 ? 503 : 502
         return createError({ statusCode: status, statusMessage: `Upstream ${err.service} failed (${err.status})` })
     }
     console.error('[upstream] unexpected non-UpstreamError reached toHttpError', err)

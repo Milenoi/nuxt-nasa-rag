@@ -146,8 +146,10 @@ The suite runs the core with fake adapters (no network), grouped by area:
 - **Error boundary** (`upstreamError`): a busy upstream (500/503/504) is retried
   with a short backoff, and every attempt gets its number, so on a retry the Gemini
   adapters move on to the next model in their fallback list instead of asking the same
-  busy one again. A 429, a 400 and a schema mismatch are not retried; 429 and 503
-  pass through to the client, any other status is sanitised to 502, and the failure
+  busy one again. An attempt that stalls past 8s is aborted and retried as a 504,
+  because a busy model often hangs instead of answering 503 and would otherwise run
+  into Netlify's function limit. A 429, a 400 and a schema mismatch are not retried; 429 and 503
+  pass through to the client (a final 504 as 503, so the UI says "busy"), any other status is sanitised to 502, and the failure
   is logged server-side.
 - **Type contract** (`askContract`): the shared Zod schemas accept a valid response
   and reject a malformed one (wrong state, missing field).
